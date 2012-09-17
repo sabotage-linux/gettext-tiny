@@ -1,13 +1,7 @@
 /* Copyright (C) 2003     Manuel Novoa III
  * Copyright (C) 2000-2006 Erik Andersen <andersen@uclibc.org>
  *
- * Licensed under the LGPL v2.1.
- */
-
-/*
- *  Stub version of libintl.
- *
- *  Stripped down from uClibc
+ * Trivial Stubs, Public Domain.
  */
 
 #include <stdlib.h>
