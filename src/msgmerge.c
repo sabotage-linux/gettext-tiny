@@ -66,6 +66,21 @@ size_t convert_buf(char* in, char* out) {
 				l++;
 				*out = '"';
 				break;
+			case '\v':
+				*out++ = '\\';
+				l++;
+				*out = '\v';
+				break;
+			case '\?':
+				*out++ = '\\';
+				l++;
+				*out = '\?';
+				break;
+			case '\f':
+				*out++ = '\\';
+				l++;
+				*out = '\f';
+				break;
 			default:
 				*out = *in;
 		}

@@ -30,6 +30,19 @@ static size_t convertbuf(char* in, char *out) {
 					case '"':
 						*out='"';
 						break;
+					case 'v':
+						*out='\v';
+						break;
+					case '\?':
+						*out = '\?';
+						break;
+					case 'f':
+						*out = '\f';
+						break;
+					case '\'':
+						*out = '\'';
+						break;
+					// FIXME add handling of hex and octal
 					default:
 						abort();
 				}
