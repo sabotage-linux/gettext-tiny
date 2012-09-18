@@ -2,6 +2,7 @@
 
 outputfile=
 outputdir=.
+domain=messages
 
 spliteq() {
 	arg=$1
@@ -26,8 +27,8 @@ parsearg() {
 	#-f) expectfilefrom=1;;
 	--version) show_version;;
 	-V) show_version;;
-	--default-domain=*) : ;; #outputfiles=`spliteq "$1"`.po ;;
-	-d) shift ;;
+	--default-domain=*) domain=`spliteq "$1"` ;;
+	-d) shift ; domain="$1" ;;
 	--files-from=*) : ;;
 	-f) shift ;;
 	--directory=*) : ;;
@@ -108,7 +109,7 @@ while true ; do
 	esac
 done
 
-[ -z "$outputfile" ] && outputfile=messages.po
+[ -z "$outputfile" ] && outputfile=${domain}.po
 [ "$outputfile" = "-" ] && exit 0
 if [ "$force" = "1" ] ; then
 	touch $outputdir/$outputfile
