@@ -7,6 +7,10 @@
 #include <assert.h>
 #include "poparser.h"
 
+// in DO_NOTHING mode, we simply write the msgid twice, once for msgid, once for msgstr.
+// TODO: maybe make it write "" instead of echoing the msgid.
+//#define DO_NOTHING
+
 __attribute__((noreturn))
 static void syntax(void) {
 	fprintf(stdout,
@@ -97,7 +101,11 @@ int process_line_callback(struct po_info* info, void* user) {
 			d->off += info->textlen + 1;
 			break;
 		case pass_print_translation_offsets:
+#ifndef DO_NOTHING
 			if(info->type == pe_msgid) break;
+#else
+			if(info->type != pe_msgid) break;
+#endif
 			goto write_offsets;
 		case pass_print_strings:
 			if(info->type == pe_msgstr) break;
@@ -105,7 +113,11 @@ int process_line_callback(struct po_info* info, void* user) {
 			fwrite(info->text, info->textlen + 1, 1, d->out);
 			break;
 		case pass_print_translations:
+#ifndef DO_NOTHING
 			if(info->type == pe_msgid) break;
+#else
+			if(info->type != pe_msgid) break;
+#endif
 			goto write_string;
 			break;
 		default:
@@ -134,13 +146,23 @@ int process(FILE *in, FILE *out) {
 	};
 
 	struct po_parser pb, *p = &pb;
+	int invalid_file = 0;
 	
 	mohdr.off_tbl_trans = mohdr.off_tbl_org;
 	for(d.pass = pass_first; d.pass < pass_max; d.pass++) {
 		if(d.pass == pass_second) {
 			// start of second pass:
 			// check that data gathered in first pass is consistent
-			if(d.num[pe_msgid] != d.num[pe_msgstr]) abort();
+#ifndef DO_NOTHING
+			if(d.num[pe_msgid] != d.num[pe_msgstr]) {
+				// one should actually abort here, 
+				// but gnu gettext simply writes an empty .mo and returns success.
+				//abort();
+				d.num[pe_msgid] = 0;
+				invalid_file = 1;
+			}
+#endif
+			
 			// calculate header fields from len and num arrays
 			mohdr.numstring = d.num[pe_msgid];
 			mohdr.off_tbl_org = sizeof(struct mo_hdr);
@@ -148,7 +170,8 @@ int process(FILE *in, FILE *out) {
 			// print header
 			fwrite(&mohdr, sizeof(mohdr), 1, out);				
 			// set offset startvalue
-			d.off = mohdr.off_tbl_trans + d.num[pe_msgstr] * (sizeof(unsigned)*2);
+			d.off = mohdr.off_tbl_trans + d.num[pe_msgid] * (sizeof(unsigned)*2);
+			if(invalid_file) return 0;
 		}
 		poparser_init(p, convbuf, sizeof(convbuf), process_line_callback, &d);
 		
