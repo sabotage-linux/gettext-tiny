@@ -9,13 +9,14 @@ PROGSRC = $(sort $(wildcard src/*.c))
 
 PROGOBJS = $(PROGSRC:.c=.o)
 LIBOBJS = $(LIBSRC:.c=.o)
+OBJS = $(PROGOBJS) $(LIBOBJS)
 
 
 HEADERS = libintl.h
 ALL_INCLUDES = $(HEADERS)
 
 ALL_LIBS=libintl.a
-ALL_TOOLS=msgfmt
+ALL_TOOLS=msgfmt msgmerge
 
 CFLAGS=-O0 -fPIC
 
@@ -44,9 +45,15 @@ libintl.a: $(LIBOBJS)
 	$(AR) rc $@ $(LIBOBJS)
 	$(RANLIB) $@
 
-$(ALL_TOOLS): $(PROGOBJS)
-	$(CC) $(LDFLAGS) -static -o $@ $< src/poparser.o
-	
+src/poparser.o:
+	$(CC) $(BUILDCFLAGS) -c -o $@ src/poparser.c
+
+msgmerge: $(OBJS)
+	$(CC) $(LDFLAGS) -static -o $@ src/msgmerge.o src/poparser.o
+
+msgfmt: $(OBJS)
+	$(CC) $(LDFLAGS) -static -o $@ src/msgfmt.o src/poparser.o
+
 
 $(DESTDIR)$(libdir)/%.a: %.a
 	install -D -m 755 $< $@
