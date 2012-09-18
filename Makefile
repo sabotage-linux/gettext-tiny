@@ -16,7 +16,7 @@ HEADERS = libintl.h
 ALL_INCLUDES = $(HEADERS)
 
 ALL_LIBS=libintl.a
-ALL_TOOLS=msgfmt msgmerge
+ALL_TOOLS=msgfmt msgmerge xgettext
 
 CFLAGS=-O0 -fPIC
 
@@ -54,6 +54,8 @@ msgmerge: $(OBJS)
 msgfmt: $(OBJS)
 	$(CC) $(LDFLAGS) -static -o $@ src/msgfmt.o src/poparser.o
 
+xgettext:
+	cp src/xgettext.sh ./xgettext
 
 $(DESTDIR)$(libdir)/%.a: %.a
 	install -D -m 755 $< $@
