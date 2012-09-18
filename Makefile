@@ -5,10 +5,11 @@ libdir=$(prefix)/lib
 sysconfdir=$(prefix)/etc
 
 LIBSRC = $(sort $(wildcard libintl/*.c))
+PROGSRC = $(sort $(wildcard src/*.c))
 
-SRCS = $(LIBSRC)
-OBJS = $(SRCS:.c=.o)
+PROGOBJS = $(PROGSRC:.c=.o)
 LIBOBJS = $(LIBSRC:.c=.o)
+
 
 HEADERS = libintl.h
 ALL_INCLUDES = $(HEADERS)
@@ -43,8 +44,8 @@ libintl.a: $(LIBOBJS)
 	$(AR) rc $@ $(LIBOBJS)
 	$(RANLIB) $@
 
-msgfmt:
-	$(CC) $(BUILDCFLAGS) -static -o $@ src/$@.c
+$(ALL_TOOLS): $(PROGOBJS)
+	$(CC) $(LDFLAGS) -static -o $@ $< src/poparser.o
 	
 
 $(DESTDIR)$(libdir)/%.a: %.a
