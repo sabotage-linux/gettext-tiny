@@ -136,7 +136,7 @@ int poparser_feed_line(struct po_parser *p, char* line, size_t buflen) {
 			[pe_invalid] = la_proc, 
 		},
 		[pe_invalid] = { 
-			[pe_str] = la_abort,
+			[pe_str] = la_nop, // this can happen when we have msgstr[2] "" ... "foo", since we only parse msgstr[0] and [1]
 			[pe_msgid] = la_incr,
 			[pe_msgstr] = la_incr,
 			[pe_invalid] = la_nop, 
