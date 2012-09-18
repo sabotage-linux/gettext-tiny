@@ -15,11 +15,14 @@ char *gettext(const char *msgid)
 
 char *dgettext(const char *domainname, const char *msgid)
 {
+	(void) domainname;
 	return (char *) msgid;
 }
 
 char *dcgettext(const char *domainname, const char *msgid, int category)
 {
+	(void) domainname;
+	(void) category;
 	return (char *) msgid;
 }
 
@@ -30,11 +33,14 @@ char *ngettext(const char *msgid1, const char *msgid2, unsigned long int n)
 
 char *dngettext(const char *domainname, const char *msgid1, const char *msgid2, unsigned long int n)
 {
+	(void) domainname;
 	return (char *) ((n == 1) ? msgid1 : msgid2);
 }
 
 char *dcngettext(const char *domainname, const char *msgid1, const char *msgid2, unsigned long int n, int category)
 {
+	(void) domainname;
+	(void) category;
 	return (char *) ((n == 1) ? msgid1 : msgid2);
 }
 
