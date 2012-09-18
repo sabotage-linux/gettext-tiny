@@ -10,10 +10,16 @@
 
 #define gettext_noop(X) (X)
 
-// FIXME these should probably return something
+#if 0
+// FIXME these should return something
 #define bindtextdomain(X, Y)
 #define textdomain(X)
 #define bind_textdomain_codeset(dom, codeset)
+#else
+char *textdomain(const char *domainname);
+char *bind_textdomain_codeset(const char *domainname, const char *codeset);
+char *bindtextdomain(const char *domainname, const char *dirname);
+#endif
 
 #include <stdio.h>
 #define gettext_printf(args...) printf(args)
