@@ -7,10 +7,18 @@
 #include <assert.h>
 #include "poparser.h"
 
-void syntax(void) {
+__attribute__((noreturn))
+static void syntax(void) {
 	fprintf(stdout,
 	"Usage: msgfmt [OPTION] filename.po ...\n");
 	exit(1);
+}
+
+__attribute__((noreturn))
+static void version(void) {
+	fprintf(stdout,
+		"these are not (GNU gettext-tools) 99.9999.9999\n");
+	exit(0);
 }
 
 #define streq(A, B) (!strcmp(A, B))
@@ -204,7 +212,6 @@ int main(int argc, char**argv) {
 					streq(A+2, "no-hash") ||
 					streq(A+2, "verbose") ||
 					streq(A+2, "statistics") ||
-					streq(A+2, "version") ||
 					strstarts(A+2, "check-accelerators=") ||
 					strstarts(A+2, "resource=") ||
 					strstarts(A+2, "locale=")
@@ -212,6 +219,8 @@ int main(int argc, char**argv) {
 				) {
 				} else if((dest = strstarts(A+2, "output-file="))) {
 					set_file(1, dest, &out);
+				} else if(streq(A+2, "version")) {
+					version();
 				} else if(streq(A+2, "help")) syntax();
 				
 			} else if(streq(A + 1, "o")) {
@@ -224,9 +233,10 @@ int main(int argc, char**argv) {
 				streq(A+1, "f") ||
 				streq(A+1, "a") ||
 				streq(A+1, "c") ||
-				streq(A+1, "C") ||
-				streq(A+1, "v")
+				streq(A+1, "C")
 			) {
+			} else if (streq(A+1, "v")) {
+				version();
 			} else if (streq(A+1, "d")) {
 				// no support for -d at this time
 				fprintf(stderr, "EINVAL\n");

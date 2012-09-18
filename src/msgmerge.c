@@ -8,10 +8,17 @@
 #include "poparser.h"
 
 __attribute__((noreturn))
-void syntax(void) {
+static void syntax(void) {
 	fprintf(stdout,
 	"Usage: msgmerge [OPTION] def.po ref.pot\n");
 	exit(1);
+}
+
+__attribute__((noreturn))
+static void version(void) {
+	fprintf(stdout,
+		"these are not (GNU gettext-tools) 99.9999.9999\n");
+	exit(0);
 }
 
 #define streq(A, B) (!strcmp(A, B))
@@ -170,10 +177,9 @@ int main(int argc, char**argv) {
 					
 					streq(A+2, "verbose") ||
 					streq(A+2, "quiet") ||
-					streq(A+2, "silent") ||
-					streq(A+2, "version")
-					
-				) {
+					streq(A+2, "silent") ) { 
+				} else if(streq(A+2, "version")) {
+					version();
 				} else if((dest = strstarts(A+2, "output-file="))) {
 					set_file(1, dest, &files.out);
 				} else if((dest = strstarts(A+2, "compendium="))) {
@@ -211,9 +217,11 @@ int main(int argc, char**argv) {
 				streq(A+1, "s") ||
 				streq(A+1, "F") ||
 				streq(A+1, "V") ||
-				streq(A+1, "q") ||
-				streq(A+1, "v")
+				streq(A+1, "q")
 			) {
+			
+			} else if (streq(A+1, "v")) {
+				version();
 			} else if (streq(A+1, "D")) {
 				// no support for -D at this time
 				nodir:
