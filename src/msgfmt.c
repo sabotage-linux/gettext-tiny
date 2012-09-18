@@ -6,12 +6,6 @@
 #include <ctype.h>
 #include <assert.h>
 
-/* TODO: handle multiline strings
-msgid ""
-"next line\n"
-"and another line"
-*/
-
 void syntax(void) {
 	fprintf(stdout,
 	"Usage: msgfmt [OPTION] filename.po ...\n");
@@ -44,6 +38,7 @@ const struct mo_hdr def_hdr = {
 	0,
 	0,
 	sizeof(struct mo_hdr),
+	0,
 	0,
 	0,
 };
@@ -89,40 +84,55 @@ size_t convertbuf(char* in, char *out) {
 enum plr_type {
 	plr_msgid = 0,
 	plr_msgstr,
+	plr_str,
 	plr_invalid,
-	plr_max = plr_invalid,
+	plr_max,
 };
 
-struct plr {
-	unsigned len;
-	enum plr_type type;
-};
-
-void process_line(char *lp, char* end, char* convbuf, struct plr *result) {
-	char *x, *y, *e;
+enum plr_type get_type_and_start(char* lp, char* end, size_t *stringstart) {
+	enum plr_type result_type;
+	char *x, *y;
+	size_t start = (size_t) lp;
 	while(isspace(*lp) && lp < end) lp++;
-	if(lp[0] == '#') goto inv;
+	if(lp[0] == '#') {
+		inv:
+		*stringstart = 0;
+		return plr_invalid;
+	}
 	if((y = strstarts(lp, "msg"))) {
 		if((x = strstarts(y, "id")) && (isspace(*x) || ((x = strstarts(x, "_plural")) && isspace(*x))))
-			result->type = plr_msgid;
+			result_type = plr_msgid;
 		else if ((x = strstarts(y, "str")) && (isspace(*x) || 
 			(x[0] == '[' && (x[1] == '0' || x[1] == '1') && x[2] == ']' && (x += 3) && isspace(*x))))
-			result->type = plr_msgstr;
-		else {
-			inv:
-			result->type = plr_invalid;
-			return;
-		}
+			result_type = plr_msgstr;
+		else 
+			goto inv;
 		while(isspace(*x) && x < end) x++;
 		if(*x != '"') abort();
-		e = x + strlen(x);
-		assert(e > x && *e == 0);
-		e--;
-		while(isspace(*e)) e--;
-		if(*e != '"') abort();
-		*e = 0;
-		result->len = convertbuf(x + 1, convbuf);
-	} else goto inv;
+		conv:
+		*stringstart = ((size_t) x - start) + 1;
+	} else if(*lp == '"') {
+		result_type = plr_str;
+		x = lp;
+		goto conv;
+	} else {
+		goto inv;
+	}
+	return result_type;
+}
+
+/* expects a pointer to the first char after a opening " in a string, 
+ * converts the string into convbuf, and returns the length of that string */
+size_t get_length_and_convert(char* x, char* end, char* convbuf) {
+	size_t result = 0;
+	char* e = x + strlen(x);
+	assert(e > x && e < end && *e == 0);
+	e--;
+	while(isspace(*e)) e--;
+	if(*e != '"') abort();
+	*e = 0;
+	result = convertbuf(x, convbuf);
+	return result;
 }
 
 // pass 0: collect numbers of strings, calculate size and offsets for tables
@@ -142,11 +152,22 @@ enum passes {
 	pass_max,
 };
 
+enum lineactions {
+	la_incr,
+	la_proc,
+	la_abort,
+	la_nop,
+	la_max,
+};
+
 int process(FILE *in, FILE *out) {
 	struct mo_hdr mohdr = def_hdr;
 	char line[4096]; char *lp;
 	char convbuf[4096];
 	unsigned off;
+	enum plr_type prev_type = plr_invalid;
+	unsigned curr_len = 0;
+	size_t strstart;
 	
 	unsigned num[plr_max] = {
 		[plr_msgid] = 0,
@@ -156,62 +177,121 @@ int process(FILE *in, FILE *out) {
 		[plr_msgid] = 0,
 		[plr_msgstr] = 0,
 	};
+	static const enum lineactions action_tbl[plr_max][plr_max] = {
+		// plr_str will never be set as curr_type
+		[plr_str] = { 
+			[plr_str] = la_abort,
+			[plr_msgid] = la_abort,
+			[plr_msgstr] = la_abort,
+			[plr_invalid] = la_abort, 
+		},
+		[plr_msgid] = { 
+			[plr_str] = la_incr,
+			[plr_msgid] = la_proc,
+			[plr_msgstr] = la_proc,
+			[plr_invalid] = la_proc, 
+		},
+		[plr_msgstr] = { 
+			[plr_str] = la_incr,
+			[plr_msgid] = la_proc,
+			[plr_msgstr] = la_proc,
+			[plr_invalid] = la_proc, 
+		},
+		[plr_invalid] = { 
+			[plr_str] = la_abort,
+			[plr_msgid] = la_incr,
+			[plr_msgstr] = la_incr,
+			[plr_invalid] = la_nop, 
+		},
+	};
 	
 	// increased in pass 0 to point to the strings section
 	// increased in pass 1 to point to the translation section
 	enum passes pass;
-	struct plr lineresult;
+	enum plr_type type;
+	int finished;
 	
 	mohdr.off_tbl_trans = mohdr.off_tbl_org;
 	for(pass = pass_first; pass < pass_max; pass++) {
-		switch(pass) {
-			case pass_second:
-				// start of second pass:
-				// check that data gathered in first pass is consistent
-				if(num[plr_msgid] != num[plr_msgstr]) abort();
-				// calculate header fields from len and num arrays
-				mohdr.numstring = num[plr_msgid];
-				mohdr.off_tbl_org = sizeof(struct mo_hdr);
-				mohdr.off_tbl_trans = mohdr.off_tbl_org + num[plr_msgid] * (sizeof(unsigned)*2);
-				// print header
-				fwrite(&mohdr, sizeof(mohdr), 1, out);				
-				// set offset startvalue
-				off = mohdr.off_tbl_trans + num[plr_msgstr] * (sizeof(unsigned)*2);
-				break;
+		if(pass == pass_second) {
+			// start of second pass:
+			// check that data gathered in first pass is consistent
+			if(num[plr_msgid] != num[plr_msgstr]) abort();
+			// calculate header fields from len and num arrays
+			mohdr.numstring = num[plr_msgid];
+			mohdr.off_tbl_org = sizeof(struct mo_hdr);
+			mohdr.off_tbl_trans = mohdr.off_tbl_org + num[plr_msgid] * (sizeof(unsigned)*2);
+			// print header
+			fwrite(&mohdr, sizeof(mohdr), 1, out);				
+			// set offset startvalue
+			off = mohdr.off_tbl_trans + num[plr_msgstr] * (sizeof(unsigned)*2);
 		}
+		finished = 0;
 		while((lp = fgets(line, sizeof(line), in))) {
-			process_line(lp, line + sizeof(line), convbuf, &lineresult);
-			if(lineresult.type == plr_invalid) continue;
-			switch(pass) {
-				case pass_collect_sizes:
-					num[lineresult.type] += 1;
-					len[lineresult.type] += lineresult.len;
+			doline:
+			type = get_type_and_start(lp, line + sizeof(line), &strstart);
+			switch(action_tbl[prev_type][type]) {
+				case la_incr:
+					assert(type == plr_msgid || type == plr_msgstr || type == plr_str);
+					curr_len += get_length_and_convert(lp + strstart, line + sizeof(line) - curr_len, convbuf + curr_len);
 					break;
-				case pass_print_string_offsets:
-					if(lineresult.type == plr_msgstr) break;
-					write_offsets:
-					// print length of current string
-					fwrite(&lineresult.len, sizeof(unsigned), 1, out);
-					// print offset of current string
-					fwrite(&off, sizeof(unsigned), 1, out);
-					off += lineresult.len + 1;
+				case la_proc:
+					assert(prev_type == plr_msgid || prev_type == plr_msgstr);
+					switch(pass) {
+						case pass_collect_sizes:
+							num[prev_type] += 1;
+							len[prev_type] += curr_len;
+							break;
+						case pass_print_string_offsets:
+							if(prev_type == plr_msgstr) break;
+							write_offsets:
+							// print length of current string
+							fwrite(&curr_len, sizeof(unsigned), 1, out);
+							// print offset of current string
+							fwrite(&off, sizeof(unsigned), 1, out);
+							off += curr_len + 1;
+							break;
+						case pass_print_translation_offsets:
+							if(prev_type == plr_msgid) break;
+							goto write_offsets;
+						case pass_print_strings:
+							if(prev_type == plr_msgstr) break;
+							write_string:
+							fwrite(convbuf, curr_len + 1, 1, out);
+							break;
+						case pass_print_translations:
+							if(prev_type == plr_msgid) break;
+							goto write_string;
+							break;
+						default:
+							abort();
+					}
+					if(type != plr_invalid)
+						curr_len = get_length_and_convert(lp + strstart, line + sizeof(line), convbuf);
+					else 
+						curr_len = 0;
 					break;
-				case pass_print_translation_offsets:
-					if(lineresult.type == plr_msgid) break;
-					goto write_offsets;
-				case pass_print_strings:
-					if(lineresult.type == plr_msgstr) break;
-					write_string:
-					fwrite(convbuf, lineresult.len + 1, 1, out);
+				case la_nop:
 					break;
-				case pass_print_translations:
-					if(lineresult.type == plr_msgid) break;
-					goto write_string;
-					break;
+				case la_abort:
+				default:
+					abort();
 			}
+			if(type != plr_str) {
+				prev_type = type;
+			}
+		}
+		if(!finished) {
+			// we need to make an extra pass of type invalid to trigger
+			// processing of the last string.
+			lp = line;
+			*lp = 0;
+			finished = 1;
+			goto doline;
 		}
 		fseek(in, 0, SEEK_SET);
 	}
+	return 0;
 }
 
 
