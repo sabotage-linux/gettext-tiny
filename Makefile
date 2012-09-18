@@ -44,7 +44,7 @@ libintl.a: $(LIBOBJS)
 	$(RANLIB) $@
 
 msgfmt:
-	$(CC) -O0 -g -static -o $@ src/$@.c
+	$(CC) $(BUILDCFLAGS) -static -o $@ src/$@.c
 	
 
 $(DESTDIR)$(libdir)/%.a: %.a
