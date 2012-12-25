@@ -45,9 +45,6 @@ libintl.a: $(LIBOBJS)
 	$(AR) rc $@ $(LIBOBJS)
 	$(RANLIB) $@
 
-src/poparser.o:
-	$(CC) $(BUILDCFLAGS) -c -o $@ src/poparser.c
-
 msgmerge: $(OBJS)
 	$(CC) $(LDFLAGS) -static -o $@ src/msgmerge.o src/poparser.o
 
