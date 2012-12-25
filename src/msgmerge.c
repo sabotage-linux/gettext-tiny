@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include "poparser.h"
+#include "StringEscape.h"
 
 __attribute__((noreturn))
 static void syntax(void) {
@@ -37,61 +38,6 @@ struct fiLes {
 	FILE *compend;
 };
 
-size_t convert_buf(char* in, char* out) {
-	size_t l = 0;
-	while(*in) {
-		switch(*in) {
-			case '\n':
-				*out++ = '\\';
-				l++;
-				*out = 'n';
-				break;
-			case '\r':
-				*out++ = '\\';
-				l++;
-				*out = 'r';
-				break;
-			case '\t':
-				*out++ = '\\';
-				l++;
-				*out = 't';
-				break;
-			case '\\':
-				*out++ = '\\';
-				l++;
-				*out = '\\';
-				break;
-			case '"':
-				*out++ = '\\';
-				l++;
-				*out = '"';
-				break;
-			case '\v':
-				*out++ = '\\';
-				l++;
-				*out = '\v';
-				break;
-			case '\?':
-				*out++ = '\\';
-				l++;
-				*out = '\?';
-				break;
-			case '\f':
-				*out++ = '\\';
-				l++;
-				*out = '\f';
-				break;
-			default:
-				*out = *in;
-		}
-		in++;
-		out++;
-		l++;
-	}
-	*out = 0;
-	return l;
-}
-
 /* currently we only output input strings as output strings 
  * i.e. there is no translation lookup at all */
 int process_line_callback(struct po_info* info, void* user) {
@@ -99,7 +45,7 @@ int process_line_callback(struct po_info* info, void* user) {
 	FILE* out = (FILE*) user;
 	size_t l;
 	if(info->type == pe_msgid) {
-		l = convert_buf(info->text, convbuf);
+		l = escape(info->text, convbuf, sizeof(convbuf));
 		fprintf(out, "msgid \"%s\"\nmsgstr \"%s\"\n", convbuf, convbuf);
 	}
 	return 0;
@@ -108,7 +54,7 @@ int process_line_callback(struct po_info* info, void* user) {
 int process(struct fiLes *files, int update, int backup) {
 	(void) update; (void) backup;
 	struct po_parser pb, *p = &pb;
-	char line[4096], conv[4096], *lb;
+	char line[4096], conv[8192], *lb;
 	poparser_init(p, conv, sizeof(conv), process_line_callback, files->out);
 	while((lb = fgets(line, sizeof(line), files->pot))) {
 		poparser_feed_line(p, lb, sizeof(line) - (size_t)(lb - line));

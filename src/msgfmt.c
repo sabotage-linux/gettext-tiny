@@ -129,7 +129,7 @@ int process_line_callback(struct po_info* info, void* user) {
 int process(FILE *in, FILE *out) {
 	struct mo_hdr mohdr = def_hdr;
 	char line[4096]; char *lp;
-	char convbuf[4096];
+	char convbuf[16384];
 
 	struct callbackdata d = {
 		.num = {

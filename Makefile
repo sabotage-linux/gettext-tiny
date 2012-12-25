@@ -7,6 +7,7 @@ sysconfdir=$(prefix)/etc
 LIBSRC = $(sort $(wildcard libintl/*.c))
 PROGSRC = $(sort $(wildcard src/*.c))
 
+PARSEROBJS = src/poparser.o src/StringEscape.o
 PROGOBJS = $(PROGSRC:.c=.o)
 LIBOBJS = $(LIBSRC:.c=.o)
 OBJS = $(PROGOBJS) $(LIBOBJS)
@@ -46,10 +47,10 @@ libintl.a: $(LIBOBJS)
 	$(RANLIB) $@
 
 msgmerge: $(OBJS)
-	$(CC) $(LDFLAGS) -static -o $@ src/msgmerge.o src/poparser.o
+	$(CC) $(LDFLAGS) -static -o $@ src/msgmerge.o $(PARSEROBJS)
 
 msgfmt: $(OBJS)
-	$(CC) $(LDFLAGS) -static -o $@ src/msgfmt.o src/poparser.o
+	$(CC) $(LDFLAGS) -static -o $@ src/msgfmt.o $(PARSEROBJS)
 
 xgettext:
 	cp src/xgettext.sh ./xgettext
