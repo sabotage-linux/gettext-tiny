@@ -1,12 +1,12 @@
 #ifndef LIBINTL_H
 #define LIBINTL_H
 
-#define gettext(X) (X)
-#define dgettext(dom, X) (X)
-#define dcgettext(dom, X, cat) (X)
-#define ngettext(X, Y, N) ((N == 1) ? X : Y)
-#define dngettext(dom, X, Y, N) ((N == 1) ? X : Y)
-#define dcngettext(dom, X, Y, N, cat) ((N == 1) ? X : Y)
+#define gettext(X) (char*) (X)
+#define dgettext(dom, X) (char*) (X)
+#define dcgettext(dom, X, cat) (char*) (X)
+#define ngettext(X, Y, N) (char*) ((N == 1) ? X : Y)
+#define dngettext(dom, X, Y, N) (char*) ((N == 1) ? X : Y)
+#define dcngettext(dom, X, Y, N, cat) (char*) ((N == 1) ? X : Y)
 
 #define gettext_noop(X) (X)
 
