@@ -26,18 +26,18 @@ char *dcgettext(const char *domainname, const char *msgid, int category)
 	return (char *) msgid;
 }
 
-char *ngettext(const char *msgid1, const char *msgid2, unsigned long int n)
+char *ngettext(const char *msgid1, const char *msgid2, unsigned long n)
 {
 	return (char *) ((n == 1) ? msgid1 : msgid2);
 }
 
-char *dngettext(const char *domainname, const char *msgid1, const char *msgid2, unsigned long int n)
+char *dngettext(const char *domainname, const char *msgid1, const char *msgid2, unsigned long n)
 {
 	(void) domainname;
 	return (char *) ((n == 1) ? msgid1 : msgid2);
 }
 
-char *dcngettext(const char *domainname, const char *msgid1, const char *msgid2, unsigned long int n, int category)
+char *dcngettext(const char *domainname, const char *msgid1, const char *msgid2, unsigned long n, int category)
 {
 	(void) domainname;
 	(void) category;
