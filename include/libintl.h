@@ -38,6 +38,16 @@ char *bindtextdomain(const char *domainname, const char *dirname);
 	((void)(dom), (void)(codeset), (char*) 0)
 #define textdomain(X) ((void)(X), (char*) "messages")
 
+#undef ENABLE_NLS
+#undef DISABLE_NLS
+#define DISABLE_NLS 1
+
+#if __GNUC__ > 3
+/* most ppl call bindtextdomain() without using its return value
+   thus we get tons of warnings about "statement with no effect" */
+#pragma GCC diagnostic ignored "-Wunused-value"
+#endif
+
 #endif
 
 #include <stdio.h>
