@@ -24,14 +24,18 @@ char *bindtextdomain(const char *domainname, const char *dirname);
  * add -DLIBINTL_NO_MACROS=1 to your CPPFLAGS. */
 
 #define gettext(X) ((char*) (X))
-#define dgettext(dom, X) ((char*) (X))
-#define dcgettext(dom, X, cat) ((char*) (X))
-#define ngettext(X, Y, N) ((char*) ((N == 1) ? X : Y))
-#define dngettext(dom, X, Y, N) ((char*) ((N == 1) ? X : Y))
-#define dcngettext(dom, X, Y, N, cat) ((char*) ((N == 1) ? X : Y))
-#define bindtextdomain(X, Y) ((char*) "/")
-#define bind_textdomain_codeset(dom, codeset) ((char*) 0)
-#define textdomain(X) ((char*) "messages")
+#define dgettext(dom, X) ((void)(dom), (char*) (X))
+#define dcgettext(dom, X, cat) ((void)(dom), (void)(cat), (char*) (X))
+#define ngettext(X, Y, N) \
+	((char*) (((N) == 1) ? ((void)(Y), (X)) : ((void)(X), (Y))))
+#define dngettext(dom, X, Y, N) \
+	((dom), (char*) (((N) == 1) ? ((void)(Y), (X)) : ((void)(X), (Y))))
+#define dcngettext(dom, X, Y, N, cat) \
+	((dom), (cat), (char*) (((N) == 1) ? ((void)(Y), (X)) : ((void)(X), (Y))))
+#define bindtextdomain(X, Y) ((void)(X), (void)(Y), (char*) "/")
+#define bind_textdomain_codeset(dom, codeset) \
+	((void)(dom), (void)(codeset), (char*) 0)
+#define textdomain(X) ((void)(X), (char*) "messages")
 
 #endif
 
