@@ -42,7 +42,7 @@ char *bindtextdomain(const char *domainname, const char *dirname);
 #undef DISABLE_NLS
 #define DISABLE_NLS 1
 
-#if __GNUC__ > 3
+#if __GNUC__ +0 > 3
 /* most ppl call bindtextdomain() without using its return value
    thus we get tons of warnings about "statement with no effect" */
 #pragma GCC diagnostic ignored "-Wunused-value"
