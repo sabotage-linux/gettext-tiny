@@ -21,7 +21,7 @@ show_version() {
 	exit 0
 }
 
-parsearg() {
+while true ; do
 	case $1 in
 	#--files-from=*) readfile `spliteq "$1"`;;
 	#-f) expectfilefrom=1;;
@@ -98,20 +98,14 @@ parsearg() {
 	-M*) : ;;
 	--help) syntax ;;
 	-h) syntax ;;
-	*) syntax ;;
-	esac
-}
-
-while true ; do
-	case $1 in
-	-*) parsearg "$1" ; shift ;;
 	*) break ;;
 	esac
+	shift
 done
 
 [ -z "$outputfile" ] && outputfile=${domain}.po
 [ "$outputfile" = "-" ] && exit 0
-if [ "$force" = "1" ] ; then
+if [ ! -z "$outputfile" ] ; then
 	touch $outputdir/$outputfile
 fi
 
