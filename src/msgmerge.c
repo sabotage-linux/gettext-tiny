@@ -157,7 +157,8 @@ int main(int argc, char**argv) {
 				} else if(streq(A+2, "update")) {
 					set_update:
 					update = 1;
-					abort();
+					fprintf(stdout, "error: update functionality unimplemented\n");
+					exit(update);
 				} else if(streq(A+2, "help")) syntax();
 
 			} else if(streq(A + 1, "o")) {
