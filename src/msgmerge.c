@@ -30,7 +30,7 @@ struct fiLes {
 	/* we can haz 3 different input files:
 	* the .pot, which is the file containing only the ripped out strings from the program
 	* (and no translations)
-	* a .po, which is contains translations and strings made from a previous .pot from that same source file,
+	* a .po, which contains translations and strings made from a previous .pot from that same source file,
 	* a compendium, which is basically a huge po file containing all sorts of strings (msgid's) and translations (msgstr's)
 	*/
 	FILE *po;
