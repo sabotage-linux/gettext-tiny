@@ -46,6 +46,7 @@ int process_line_callback(struct po_info* info, void* user) {
 	size_t l;
 	if(info->type == pe_msgid) {
 		l = escape(info->text, convbuf, sizeof(convbuf));
+		(void) l;
 		fprintf(out, "msgid \"%s\"\nmsgstr \"%s\"\n", convbuf, convbuf);
 	}
 	return 0;
