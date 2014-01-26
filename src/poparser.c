@@ -21,10 +21,10 @@ static enum po_entry get_type_and_start(char* lp, char* end, size_t *stringstart
 	if((y = strstarts(lp, "msg"))) {
 		if((x = strstarts(y, "id")) && (isspace(*x) || ((x = strstarts(x, "_plural")) && isspace(*x))))
 			result_type = pe_msgid;
-		else if ((x = strstarts(y, "str")) && (isspace(*x) || 
+		else if ((x = strstarts(y, "str")) && (isspace(*x) ||
 			(x[0] == '[' && (x[1] == '0' || x[1] == '1') && x[2] == ']' && (x += 3) && isspace(*x))))
 			result_type = pe_msgstr;
-		else 
+		else
 			goto inv;
 		while(isspace(*x) && x < end) x++;
 		if(*x != '"') abort();
@@ -40,7 +40,7 @@ static enum po_entry get_type_and_start(char* lp, char* end, size_t *stringstart
 	return result_type;
 }
 
-/* expects a pointer to the first char after a opening " in a string, 
+/* expects a pointer to the first char after a opening " in a string,
  * converts the string into convbuf, and returns the length of that string */
 static size_t get_length_and_convert(char* x, char* end, char* convbuf, size_t convbuflen) {
 	size_t result = 0;
@@ -77,37 +77,37 @@ int poparser_feed_line(struct po_parser *p, char* line, size_t buflen) {
 	char *convbuf = p->buf;
 	size_t convbuflen = p->bufsize;
 	size_t strstart;
-	
+
 	static const enum lineactions action_tbl[pe_max][pe_max] = {
 		// pe_str will never be set as curr_type
-		[pe_str] = { 
+		[pe_str] = {
 			[pe_str] = la_abort,
 			[pe_msgid] = la_abort,
 			[pe_msgstr] = la_abort,
-			[pe_invalid] = la_abort, 
+			[pe_invalid] = la_abort,
 		},
-		[pe_msgid] = { 
+		[pe_msgid] = {
 			[pe_str] = la_incr,
 			[pe_msgid] = la_proc,
 			[pe_msgstr] = la_proc,
-			[pe_invalid] = la_proc, 
+			[pe_invalid] = la_proc,
 		},
-		[pe_msgstr] = { 
+		[pe_msgstr] = {
 			[pe_str] = la_incr,
 			[pe_msgid] = la_proc,
 			[pe_msgstr] = la_proc,
-			[pe_invalid] = la_proc, 
+			[pe_invalid] = la_proc,
 		},
-		[pe_invalid] = { 
+		[pe_invalid] = {
 			[pe_str] = la_nop, // this can happen when we have msgstr[2] "" ... "foo", since we only parse msgstr[0] and [1]
 			[pe_msgid] = la_incr,
 			[pe_msgstr] = la_incr,
-			[pe_invalid] = la_nop, 
+			[pe_invalid] = la_nop,
 		},
 	};
-	
+
 	enum po_entry type;
-	
+
 	type = get_type_and_start(line, line + buflen, &strstart);
 	switch(action_tbl[p->prev_type][type]) {
 		case la_incr:
@@ -122,7 +122,7 @@ int poparser_feed_line(struct po_parser *p, char* line, size_t buflen) {
 			p->cb(&p->info, p->cbdata);
 			if(type != pe_invalid)
 				p->curr_len = get_length_and_convert(line + strstart, line + buflen, convbuf, convbuflen);
-			else 
+			else
 				p->curr_len = 0;
 			break;
 		case la_nop:

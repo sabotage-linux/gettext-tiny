@@ -18,7 +18,7 @@ char *bindtextdomain(const char *domainname, const char *dirname);
 #ifndef LIBINTL_NO_MACROS
 /* if these macros are defined, configure checks will detect libintl as
  * built into the libc because test programs will work without -lintl.
- * for example: 
+ * for example:
  * checking for ngettext in libc ... yes
  * the consequence is that -lintl will not be added to the LDFLAGS.
  * so if for some reason you want that libintl.a gets linked,

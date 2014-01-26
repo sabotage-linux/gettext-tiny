@@ -147,7 +147,7 @@ int process(FILE *in, FILE *out) {
 
 	struct po_parser pb, *p = &pb;
 	int invalid_file = 0;
-	
+
 	mohdr.off_tbl_trans = mohdr.off_tbl_org;
 	for(d.pass = pass_first; d.pass < pass_max; d.pass++) {
 		if(d.pass == pass_second) {
@@ -155,32 +155,32 @@ int process(FILE *in, FILE *out) {
 			// check that data gathered in first pass is consistent
 #ifndef DO_NOTHING
 			if(d.num[pe_msgid] != d.num[pe_msgstr]) {
-				// one should actually abort here, 
+				// one should actually abort here,
 				// but gnu gettext simply writes an empty .mo and returns success.
 				//abort();
 				d.num[pe_msgid] = 0;
 				invalid_file = 1;
 			}
 #endif
-			
+
 			// calculate header fields from len and num arrays
 			mohdr.numstring = d.num[pe_msgid];
 			mohdr.off_tbl_org = sizeof(struct mo_hdr);
 			mohdr.off_tbl_trans = mohdr.off_tbl_org + d.num[pe_msgid] * (sizeof(unsigned)*2);
 			// print header
-			fwrite(&mohdr, sizeof(mohdr), 1, out);				
+			fwrite(&mohdr, sizeof(mohdr), 1, out);
 			// set offset startvalue
 			d.off = mohdr.off_tbl_trans + d.num[pe_msgid] * (sizeof(unsigned)*2);
 			if(invalid_file) return 0;
 		}
 		poparser_init(p, convbuf, sizeof(convbuf), process_line_callback, &d);
-		
+
 		while((lp = fgets(line, sizeof(line), in))) {
 			poparser_feed_line(p, lp, sizeof(line));
 		}
-		
+
 		poparser_finish(p);
-		
+
 		fseek(in, 0, SEEK_SET);
 	}
 	return 0;
@@ -238,14 +238,14 @@ int main(int argc, char**argv) {
 					strstarts(A+2, "check-accelerators=") ||
 					strstarts(A+2, "resource=") ||
 					strstarts(A+2, "locale=")
-					
+
 				) {
 				} else if((dest = strstarts(A+2, "output-file="))) {
 					set_file(1, dest, &out);
 				} else if(streq(A+2, "version")) {
 					version();
 				} else if(streq(A+2, "help")) syntax();
-				
+
 			} else if(streq(A + 1, "o")) {
 				expect_out_fn = 1;
 			} else if(

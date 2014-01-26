@@ -27,7 +27,7 @@ static void version(void) {
 
 struct fiLes {
 	FILE *out;
-	/* we can haz 3 different input files: 
+	/* we can haz 3 different input files:
 	* the .pot, which is the file containing only the ripped out strings from the program
 	* (and no translations)
 	* a .po, which is contains translations and strings made from a previous .pot from that same source file,
@@ -38,7 +38,7 @@ struct fiLes {
 	FILE *compend;
 };
 
-/* currently we only output input strings as output strings 
+/* currently we only output input strings as output strings
  * i.e. there is no translation lookup at all */
 int process_line_callback(struct po_info* info, void* user) {
 	char convbuf[8192];
@@ -130,15 +130,15 @@ int main(int argc, char**argv) {
 					streq(A+2, "no-wrap") ||
 					streq(A+2, "sort-output") ||
 					streq(A+2, "sort-by-file") ||
-					
+
 					strstarts(A+2, "lang=") ||
 					strstarts(A+2, "color") || // can be --color or --color=xxx
 					strstarts(A+2, "style=") ||
 					strstarts(A+2, "width=") ||
-					
+
 					streq(A+2, "verbose") ||
 					streq(A+2, "quiet") ||
-					streq(A+2, "silent") ) { 
+					streq(A+2, "silent") ) {
 				} else if(streq(A+2, "version")) {
 					version();
 				} else if((dest = strstarts(A+2, "output-file="))) {
@@ -152,14 +152,14 @@ int main(int argc, char**argv) {
 				} else if((dest = strstarts(A+2, "backup"))) {
 					if (*dest == '=')
 						backup = getbackuptype(dest + 1);
-					else 
+					else
 						backup = 0;
 				} else if(streq(A+2, "update")) {
 					set_update:
 					update = 1;
 					abort();
 				} else if(streq(A+2, "help")) syntax();
-				
+
 			} else if(streq(A + 1, "o")) {
 				expect_fn.out = 1;
 			} else if(streq(A + 1, "C")) {
@@ -180,7 +180,7 @@ int main(int argc, char**argv) {
 				streq(A+1, "V") ||
 				streq(A+1, "q")
 			) {
-			
+
 			} else if (streq(A+1, "v")) {
 				version();
 			} else if (streq(A+1, "D")) {
@@ -213,8 +213,8 @@ int main(int argc, char**argv) {
 	}
 	for (i = 0; i < 4; i++) {
 		if(
-			filearr[i] != NULL && 
-			filearr[i] != stdout && 
+			filearr[i] != NULL &&
+			filearr[i] != stdout &&
 			filearr[i] != stdin
 		) fclose(filearr[i]);
 	}
