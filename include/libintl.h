@@ -13,7 +13,7 @@ char *bind_textdomain_codeset(const char *domainname, const char *codeset);
 char *bindtextdomain(const char *domainname, const char *dirname);
 
 #undef gettext_noop
-#define gettext_noop(X) (X)
+#define gettext_noop(X) X
 
 #ifndef LIBINTL_NO_MACROS
 /* if these macros are defined, configure checks will detect libintl as
