@@ -94,26 +94,118 @@ int strmap_comp(const void *a_, const void *b_) {
 	return strcmp(cb_for_qsort->strbuffer[0] + a->str.off, cb_for_qsort->strbuffer[0] + b->str.off);
 }
 
+enum sysdep_types {
+	st_priu32 = 0,
+	st_priu64,
+	st_priumax,
+	st_max
+};
+static const char sysdep_str[][10]={
+	[st_priu32]  = "\x08<PRIu32>",
+	[st_priu64]  = "\x08<PRIu64>",
+	[st_priumax] = "\x09<PRIuMAX>",
+};
+static const char sysdep_repl[][8]={
+	[st_priu32]  = "\x02lu\0u",
+	[st_priu64]  = "\x02lu\0llu",
+	[st_priumax] = "\x01ju"
+};
+static const char *get_repl(enum sysdep_types type, unsigned nr) {
+	assert(nr < (unsigned)sysdep_repl[type][0]);
+	const char* p = sysdep_repl[type]+1;
+	while(nr--) p+=strlen(p)+1;
+	return p;
+}
+static void replace(char* text, unsigned textlen, const char* what, const char * with) {
+	char*p = text;
+	size_t la = strlen(what), li=strlen(with);
+	assert(la >= li);
+	for(p=text;textlen >= la;) {
+		if(!memcmp(p,what,la)) {
+			memcpy(p, with, li);
+			textlen -= la;
+			memmove(p+li,p+la,textlen+1);
+			p+=li;
+		} else {
+			p++;
+			textlen--;
+		}
+	}
+}
+static unsigned get_form(enum sysdep_types type, unsigned no, unsigned occurences[st_max]) {
+	unsigned i,divisor = 1;
+	for(i=type+1;i<st_max;i++) if(occurences[i]) divisor *= sysdep_repl[i][0];
+	return (no/divisor)%sysdep_repl[type][0];
+}
+static char** sysdep_transform(const char* text, unsigned textlen, unsigned *len, unsigned *count, int simulate) {
+	unsigned occurences[st_max] = {0};
+	const char *p=text,*o;
+	unsigned i,j, l = textlen;
+	while(l && (o=strchr(p, '<'))) {
+		l-=o-p;p=o;
+		unsigned f = 0;
+		for(i=0;i<st_max;i++)
+		if(l>=(unsigned)sysdep_str[i][0] && !memcmp(p,sysdep_str[i]+1,sysdep_str[i][0])) {
+			occurences[i]++;
+			f=1;
+			p+=sysdep_str[i][0];
+			l-=sysdep_str[i][0];
+			break;
+		}
+		if(!f) p++,l--;
+	}
+	*count = 1;
+	for(i=0;i<st_max;i++) if(occurences[i]) *count *= sysdep_repl[i][0];
+	l = textlen * *count;
+	for(i=0;i<*count;i++) for(j=0;j<st_max;j++)
+	if(occurences[j]) l-= occurences[j] * (sysdep_str[j][0] - strlen(get_repl(j, get_form(j, i, occurences))));
+	*len = l+*count-1;
+
+	char **out = 0;
+	if(!simulate) {
+		out = malloc((sizeof(char*)+textlen+1) * *count);
+		assert(out);
+		char *p = (void*)(out+*count);
+		for(i=0;i<*count;i++) {
+			out[i]=p;
+			memcpy(p, text, textlen+1);
+			p+=textlen+1;
+		}
+		for(i=0;i<*count;i++) for(j=0;j<st_max;j++)
+		if(occurences[j])
+			replace(out[i], textlen, sysdep_str[j]+1, get_repl(j, get_form(j, i, occurences)));
+	}
+
+	return out;
+}
 
 int process_line_callback(struct po_info* info, void* user) {
 	struct callbackdata *d = (struct callbackdata *) user;
 	assert(info->type == pe_msgid || info->type == pe_msgstr);
+	char **sysdeps;
+	unsigned len, count, i, l;
 	switch(d->pass) {
 		case pass_collect_sizes:
-			d->num[info->type] += 1;
-			d->len[info->type] += info->textlen +1;
+			sysdep_transform(info->text, info->textlen, &len, &count, 1);
+			d->num[info->type] += count;
+			d->len[info->type] += len +1;
 			break;
 		case pass_second:
-			memcpy(d->strbuffer[info->type] + d->stroff[info->type], info->text, info->textlen+1);
-			if(info->type == pe_msgid)
-				d->strlist[d->curr[info->type]].str = (struct strtbl){.len=info->textlen, .off=d->stroff[info->type]};
-			else {
-				assert(d->curr[pe_msgid] == d->curr[pe_msgstr]+1);
-				d->translist[d->curr[info->type]] = (struct strtbl){.len=info->textlen, .off=d->stroff[info->type]};
-				d->strlist[d->curr[info->type]].trans = &d->translist[d->curr[info->type]];
+			sysdeps = sysdep_transform(info->text, info->textlen, &len, &count, 0);
+			for(i=0;i<count;i++) {
+				l = strlen(sysdeps[i]);
+				memcpy(d->strbuffer[info->type] + d->stroff[info->type], sysdeps[i], l+1);
+				if(info->type == pe_msgid)
+					d->strlist[d->curr[info->type]].str = (struct strtbl){.len=l, .off=d->stroff[info->type]};
+				else {
+					if(!i) assert(d->curr[pe_msgid] == d->curr[pe_msgstr] + count);
+					d->translist[d->curr[info->type]] = (struct strtbl){.len=l, .off=d->stroff[info->type]};
+					d->strlist[d->curr[info->type]].trans = &d->translist[d->curr[info->type]];
+				}
+				d->curr[info->type]++;
+				d->stroff[info->type]+=l+1;
 			}
-			d->curr[info->type]++;
-			d->stroff[info->type]+=info->textlen+1;
+			free(sysdeps);
 			break;
 		default:
 			abort();
