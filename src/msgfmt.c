@@ -59,20 +59,19 @@ const struct mo_hdr def_hdr = {
 
 // pass 0: collect numbers of strings, calculate size and offsets for tables
 // print header
-// pass 1: create in-memory string tables
+// pass 1: print string table [lengths/offsets]
+// pass 2: print translation table [lengths/offsets]
+// pass 3: print strings
+// pass 4: print translations
 enum passes {
 	pass_first = 0,
 	pass_collect_sizes = pass_first,
 	pass_second,
+	pass_print_string_offsets = pass_second,
+	pass_print_translation_offsets,
+	pass_print_strings,
+	pass_print_translations,
 	pass_max,
-};
-
-struct strtbl {
-	unsigned len, off;
-};
-
-struct strmap {
-	struct strtbl str, *trans;
 };
 
 struct callbackdata {
@@ -81,18 +80,7 @@ struct callbackdata {
 	FILE* out;
 	unsigned num[pe_maxstr];
 	unsigned len[pe_maxstr];
-	struct strmap *strlist;
-	struct strtbl *translist;
-	char *strbuffer[pe_maxstr];
-	unsigned stroff[pe_maxstr];
-	unsigned curr[pe_maxstr];
 };
-
-static struct callbackdata *cb_for_qsort;
-int strmap_comp(const void *a_, const void *b_) {
-	const struct strmap *a = a_, *b = b_;
-	return strcmp(cb_for_qsort->strbuffer[0] + a->str.off, cb_for_qsort->strbuffer[0] + b->str.off);
-}
 
 
 int process_line_callback(struct po_info* info, void* user) {
@@ -101,19 +89,36 @@ int process_line_callback(struct po_info* info, void* user) {
 	switch(d->pass) {
 		case pass_collect_sizes:
 			d->num[info->type] += 1;
-			d->len[info->type] += info->textlen +1;
+			d->len[info->type] += info->textlen;
 			break;
-		case pass_second:
-			memcpy(d->strbuffer[info->type] + d->stroff[info->type], info->text, info->textlen+1);
-			if(info->type == pe_msgid)
-				d->strlist[d->curr[info->type]].str = (struct strtbl){.len=info->textlen, .off=d->stroff[info->type]};
-			else {
-				assert(d->curr[pe_msgid] == d->curr[pe_msgstr]+1);
-				d->translist[d->curr[info->type]] = (struct strtbl){.len=info->textlen, .off=d->stroff[info->type]};
-				d->strlist[d->curr[info->type]].trans = &d->translist[d->curr[info->type]];
-			}
-			d->curr[info->type]++;
-			d->stroff[info->type]+=info->textlen+1;
+		case pass_print_string_offsets:
+			if(info->type == pe_msgstr) break;
+			write_offsets:
+			// print length of current string
+			fwrite(&info->textlen, sizeof(unsigned), 1, d->out);
+			// print offset of current string
+			fwrite(&d->off, sizeof(unsigned), 1, d->out);
+			d->off += info->textlen + 1;
+			break;
+		case pass_print_translation_offsets:
+#ifndef DO_NOTHING
+			if(info->type == pe_msgid) break;
+#else
+			if(info->type != pe_msgid) break;
+#endif
+			goto write_offsets;
+		case pass_print_strings:
+			if(info->type == pe_msgstr) break;
+			write_string:
+			fwrite(info->text, info->textlen + 1, 1, d->out);
+			break;
+		case pass_print_translations:
+#ifndef DO_NOTHING
+			if(info->type == pe_msgid) break;
+#else
+			if(info->type != pe_msgid) break;
+#endif
+			goto write_string;
 			break;
 		default:
 			abort();
@@ -144,10 +149,11 @@ int process(FILE *in, FILE *out) {
 	int invalid_file = 0;
 
 	mohdr.off_tbl_trans = mohdr.off_tbl_org;
-	for(d.pass = pass_first; d.pass <= pass_second; d.pass++) {
+	for(d.pass = pass_first; d.pass < pass_max; d.pass++) {
 		if(d.pass == pass_second) {
 			// start of second pass:
 			// check that data gathered in first pass is consistent
+#ifndef DO_NOTHING
 			if(d.num[pe_msgid] != d.num[pe_msgstr]) {
 				// one should actually abort here,
 				// but gnu gettext simply writes an empty .mo and returns success.
@@ -155,6 +161,7 @@ int process(FILE *in, FILE *out) {
 				d.num[pe_msgid] = 0;
 				invalid_file = 1;
 			}
+#endif
 
 			// calculate header fields from len and num arrays
 			mohdr.numstring = d.num[pe_msgid];
@@ -165,13 +172,6 @@ int process(FILE *in, FILE *out) {
 			// set offset startvalue
 			d.off = mohdr.off_tbl_trans + d.num[pe_msgid] * (sizeof(unsigned)*2);
 			if(invalid_file) return 0;
-
-			d.strlist = malloc(d.num[pe_msgid] * sizeof(struct strmap));
-			d.translist = malloc(d.num[pe_msgstr] * sizeof(struct strtbl));
-			d.strbuffer[pe_msgid] = malloc(d.len[pe_msgid]);
-			d.strbuffer[pe_msgstr] = malloc(d.len[pe_msgstr]);
-			d.stroff[pe_msgid] = d.stroff[pe_msgstr] = 0;
-			assert(d.strlist && d.translist && d.strbuffer[0] && d.strbuffer[1]);
 		}
 		poparser_init(p, convbuf, sizeof(convbuf), process_line_callback, &d);
 
@@ -183,21 +183,6 @@ int process(FILE *in, FILE *out) {
 
 		fseek(in, 0, SEEK_SET);
 	}
-
-	cb_for_qsort = &d;
-	qsort(d.strlist, d.num[pe_msgid], sizeof (struct strmap), strmap_comp);
-	unsigned i;
-	for(i = 0; i < d.num[0]; i++) {
-		d.strlist[i].str.off += d.off;
-		fwrite(&d.strlist[i].str, sizeof(struct strtbl), 1, d.out);
-	}
-	for(i = 0; i < d.num[1]; i++) {
-		d.strlist[i].trans->off += d.off + d.len[0];
-		fwrite(d.strlist[i].trans, sizeof(struct strtbl), 1, d.out);
-	}
-	fwrite(d.strbuffer[0], d.len[0], 1, d.out);
-	fwrite(d.strbuffer[1], d.len[1], 1, d.out);
-
 	return 0;
 }
 
