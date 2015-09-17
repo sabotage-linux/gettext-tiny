@@ -179,6 +179,11 @@ static char** sysdep_transform(const char* text, unsigned textlen, unsigned *len
 	return out;
 }
 
+static void error(const char* msg) {
+	fprintf(stderr, msg);
+	exit(1);
+}
+
 int process_line_callback(struct po_info* info, void* user) {
 	struct callbackdata *d = (struct callbackdata *) user;
 	assert(info->type == pe_msgid || info->type == pe_msgstr);
@@ -192,13 +197,17 @@ int process_line_callback(struct po_info* info, void* user) {
 			break;
 		case pass_second:
 			sysdeps = sysdep_transform(info->text, info->textlen, &len, &count, 0);
+			if(info->type == pe_msgstr) {
+				// a mismatch of one is allowed, as there may be msgid followed by msgid_plural
+				if((unsigned)(d->curr[pe_msgid] - (d->curr[pe_msgstr] + count)) > 1)
+					error("count of msgid/msgstr mismatch\n");
+			}
 			for(i=0;i<count;i++) {
 				l = strlen(sysdeps[i]);
 				memcpy(d->strbuffer[info->type] + d->stroff[info->type], sysdeps[i], l+1);
 				if(info->type == pe_msgid)
 					d->strlist[d->curr[info->type]].str = (struct strtbl){.len=l, .off=d->stroff[info->type]};
 				else {
-					if(!i) assert(d->curr[pe_msgid] == d->curr[pe_msgstr] + count);
 					d->translist[d->curr[info->type]] = (struct strtbl){.len=l, .off=d->stroff[info->type]};
 					d->strlist[d->curr[info->type]].trans = &d->translist[d->curr[info->type]];
 				}
