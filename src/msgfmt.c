@@ -253,6 +253,7 @@ int process(FILE *in, FILE *out) {
 				// one should actually abort here,
 				// but gnu gettext simply writes an empty .mo and returns success.
 				//abort();
+				fprintf(stderr, "warning: mismatch of msgid/msgstr count, writing empty .mo file\n");
 				d.num[pe_msgid] = 0;
 				invalid_file = 1;
 			}
