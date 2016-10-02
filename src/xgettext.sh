@@ -1,7 +1,7 @@
 #!/bin/sh
 
 outputfile=
-outputdir=.
+outputdir=
 domain=messages
 
 spliteq() {
@@ -103,10 +103,14 @@ while true ; do
 	shift
 done
 
-[ -z "$outputfile" ] && outputfile=${domain}.po
 [ "$outputfile" = "-" ] && exit 0
-if [ ! -z "$outputfile" ] ; then
+if [ -z "$outputfile" ] ; then
+	outputfile=${domain}.po
+	[ -z "$outputdir" ] && outputdir=.
 	touch $outputdir/$outputfile
+else
+	[ -z "$outputdir" ] && touch $outputdir/$outputfile || \
+	touch $outputfile
 fi
 
 
