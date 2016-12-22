@@ -3,6 +3,7 @@ bindir=$(prefix)/bin
 includedir=$(prefix)/include
 libdir=$(prefix)/lib
 sysconfdir=$(prefix)/etc
+m4dir=$(prefix)/share/gettext-tiny/m4
 
 LIBSRC = $(sort $(wildcard libintl/*.c))
 PROGSRC = $(sort $(wildcard src/*.c))
@@ -17,7 +18,8 @@ HEADERS = libintl.h
 ALL_INCLUDES = $(HEADERS)
 
 ALL_LIBS=libintl.a
-ALL_TOOLS=msgfmt msgmerge xgettext
+ALL_TOOLS=msgfmt msgmerge xgettext autopoint
+ALL_M4S=$(sort $(wildcard m4/*.m4))
 
 CFLAGS=-O0 -fPIC
 
@@ -31,7 +33,7 @@ BUILDCFLAGS=$(CFLAGS)
 
 all: $(ALL_LIBS) $(ALL_TOOLS)
 
-install: $(ALL_LIBS:lib%=$(DESTDIR)$(libdir)/lib%) $(ALL_INCLUDES:%=$(DESTDIR)$(includedir)/%) $(ALL_TOOLS:%=$(DESTDIR)$(bindir)/%)
+install: $(ALL_LIBS:lib%=$(DESTDIR)$(libdir)/lib%) $(ALL_INCLUDES:%=$(DESTDIR)$(includedir)/%) $(ALL_TOOLS:%=$(DESTDIR)$(bindir)/%) $(ALL_M4S:%=$(DESTDIR)$(m4dir)/%)
 
 clean:
 	rm -f $(ALL_LIBS)
@@ -55,6 +57,9 @@ msgfmt: $(OBJS)
 xgettext:
 	cp src/xgettext.sh ./xgettext
 
+autopoint: src/autopoint.in
+	cat $< | sed 's,@m4dir@,$(m4dir),' > $@
+
 $(DESTDIR)$(libdir)/%.a: %.a
 	install -D -m 755 $< $@
 
@@ -63,6 +68,9 @@ $(DESTDIR)$(includedir)/%.h: include/%.h
 
 $(DESTDIR)$(bindir)/%: %
 	install -D -m 755 $< $@
+
+$(DESTDIR)$(m4dir)/%: %
+	install -D -m 644 $< $@
 
 .PHONY: all clean install
 
