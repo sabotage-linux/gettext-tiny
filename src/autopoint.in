@@ -16,7 +16,7 @@ for i in $m4src/*.m4 ; do
 	cp $i m4/
 done
 
-touch config.rpath
+touch config.rpath ABOUT-NLS
 
 for i in intl/Makefile.in po/Makefile.in.in ; do
 	[ -e "$i" ] && touch "$i" || gen_makefile "$i"
