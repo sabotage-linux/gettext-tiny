@@ -234,7 +234,6 @@ int main(int argc, char**argv) {
 					streq(A+2, "check-accelerators") ||
 					streq(A+2, "no-hash") ||
 					streq(A+2, "verbose") ||
-					streq(A+2, "statistics") ||
 					strstarts(A+2, "check-accelerators=") ||
 					strstarts(A+2, "resource=") ||
 					strstarts(A+2, "locale=")
@@ -242,6 +241,9 @@ int main(int argc, char**argv) {
 				) {
 				} else if((dest = strstarts(A+2, "output-file="))) {
 					set_file(1, dest, &out);
+				} else if(streq(A+2, "statistics")) {
+					fprintf(stdout, "No Statistics available.\n");
+					return 0;
 				} else if(streq(A+2, "version")) {
 					version();
 				} else if(streq(A+2, "help")) syntax();
