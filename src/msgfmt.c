@@ -323,6 +323,7 @@ int main(int argc, char**argv) {
 	FILE *in = NULL;
 	int expect_out_fn = 0;
 	int expect_in_fn = 1;
+	int statistics = 0;
 	char* dest;
 #define A argv[arg]
 	for(; arg < argc; arg++) {
@@ -359,8 +360,7 @@ int main(int argc, char**argv) {
 				} else if((dest = strstarts(A+2, "output-file="))) {
 					set_file(1, dest, &out);
 				} else if(streq(A+2, "statistics")) {
-					fprintf(stdout, "No Statistics available.\n");
-					return 0;
+					statistics = 1;
 				} else if(streq(A+2, "version")) {
 					version();
 				} else if(streq(A+2, "help")) syntax();
@@ -388,7 +388,10 @@ int main(int argc, char**argv) {
 			set_file(0, A, &in);
 		}
 	}
-	if(in == NULL || out == NULL) syntax();
+	if(in == NULL || out == NULL) {
+		if(!statistics) syntax();
+		else return 0;
+	}
 	int ret = process(in, out);
 	fflush(in); fflush(out);
 	if(in != stdin) fclose(in);
