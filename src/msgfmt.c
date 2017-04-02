@@ -352,6 +352,7 @@ int main(int argc, char**argv) {
 					streq(A+2, "check-accelerators") ||
 					streq(A+2, "no-hash") ||
 					streq(A+2, "verbose") ||
+					streq(A+2, "v") ||
 					strstarts(A+2, "check-accelerators=") ||
 					strstarts(A+2, "resource=") ||
 					strstarts(A+2, "locale=")
@@ -377,7 +378,7 @@ int main(int argc, char**argv) {
 				streq(A+1, "c") ||
 				streq(A+1, "C")
 			) {
-			} else if (streq(A+1, "v")) {
+			} else if (streq(A+1, "V")) {
 				version();
 			} else if (streq(A+1, "d")) {
 				// no support for -d at this time
