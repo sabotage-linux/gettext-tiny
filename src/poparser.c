@@ -9,12 +9,18 @@
 #define streq(A, B) (!strcmp(A, B))
 #define strstarts(S, W) (memcmp(S, W, sizeof(W) - 1) ? NULL : (S + (sizeof(W) - 1)))
 
+static unsigned fuzzymark = 0;
 static enum po_entry get_type_and_start(struct po_info *info, char* lp, char* end, size_t *stringstart) {
 	enum po_entry result_type;
 	char *x, *y;
 	size_t start = (size_t) lp;
 	while(isspace(*lp) && lp < end) lp++;
 	if(lp[0] == '#') {
+		char *s;
+		if(s = strstr(lp, "fuzzy")) {
+			if(fuzzymark != 0) fuzzymark++;
+			else fuzzymark=2;
+		}
 		inv:
 		*stringstart = 0;
 		return pe_invalid;
@@ -93,6 +99,7 @@ void poparser_init(struct po_parser *p, char* workbuf, size_t bufsize, poparser_
 	*(p->info.charset) = 0;
 	// nplurals = 2 by default
 	p->info.nplurals = 50;
+	fuzzymark = 0;
 }
 
 enum lineactions {
@@ -151,6 +158,10 @@ int poparser_feed_line(struct po_parser *p, char* line, size_t buflen) {
 	enum po_entry type;
 
 	type = get_type_and_start(&p->info, line, line + buflen, &strstart);
+	if(fuzzymark) {
+		if(type == pe_msgid) fuzzymark--;
+		if(fuzzymark > 0) return 0;
+	}
 	switch(action_tbl[p->prev_type][type]) {
 		case la_incr:
 			assert(type == pe_msgid || type == pe_msgstr || type == pe_str || type == pe_plural);
