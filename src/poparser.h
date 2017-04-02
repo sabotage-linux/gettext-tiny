@@ -14,6 +14,7 @@ enum po_entry {
 struct po_info {
 	enum po_entry type;
 	char *text;
+	char charset[12];
 	size_t textlen;
 };
 
