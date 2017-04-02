@@ -20,10 +20,12 @@ static enum po_entry get_type_and_start(struct po_info *info, char* lp, char* en
 		return pe_invalid;
 	}
 	if((y = strstarts(lp, "msg"))) {
-		if((x = strstarts(y, "id")) && (isspace(*x) || ((x = strstarts(x, "_plural")) && isspace(*x))))
+		if((x = strstarts(y, "id")) && isspace(*x))
 			result_type = pe_msgid;
+		else if  ((x = strstarts(y, "id_plural")) && isspace(*x))
+			result_type = pe_plural;
 		else if ((x = strstarts(y, "str")) && (isspace(*x) ||
-			(x[0] == '[' && (x[1] == '0' || x[1] == '1') && x[2] == ']' && (x += 3) && isspace(*x))))
+			(x[0] == '[' && (x[1]-0x30) < info->nplurals && x[2] == ']' && (x += 3) && isspace(*x)))) 
 			result_type = pe_msgstr;
 		else
 			goto inv;
@@ -43,6 +45,8 @@ static enum po_entry get_type_and_start(struct po_info *info, char* lp, char* en
 				}
 			}
 		}
+		if(x = strstr(lp, "nplurals="))
+			info->nplurals = *(x+9) - 0x30;
 		result_type = pe_str;
 		x = lp;
 		goto conv;
@@ -87,6 +91,8 @@ void poparser_init(struct po_parser *p, char* workbuf, size_t bufsize, poparser_
 	p->curr_len = 0;
 	p->cbdata = cbdata;
 	*(p->info.charset) = 0;
+	// nplurals = 2 by default
+	p->info.nplurals = 50;
 }
 
 enum lineactions {
@@ -108,24 +114,35 @@ int poparser_feed_line(struct po_parser *p, char* line, size_t buflen) {
 		[pe_str] = {
 			[pe_str] = la_abort,
 			[pe_msgid] = la_abort,
+			[pe_plural] = la_abort,
 			[pe_msgstr] = la_abort,
 			[pe_invalid] = la_abort,
 		},
 		[pe_msgid] = {
 			[pe_str] = la_incr,
-			[pe_msgid] = la_proc,
+			[pe_msgid] = la_abort,
+			[pe_plural] = la_proc,
+			[pe_msgstr] = la_proc,
+			[pe_invalid] = la_proc,
+		},
+		[pe_plural] = {
+			[pe_str] = la_incr,
+			[pe_msgid] = la_abort,
+			[pe_plural] = la_abort,
 			[pe_msgstr] = la_proc,
 			[pe_invalid] = la_proc,
 		},
 		[pe_msgstr] = {
 			[pe_str] = la_incr,
 			[pe_msgid] = la_proc,
+			[pe_plural] = la_abort,
 			[pe_msgstr] = la_proc,
 			[pe_invalid] = la_proc,
 		},
 		[pe_invalid] = {
 			[pe_str] = la_nop, // this can happen when we have msgstr[2] "" ... "foo", since we only parse msgstr[0] and [1]
 			[pe_msgid] = la_incr,
+			[pe_plural] = la_abort,
 			[pe_msgstr] = la_incr,
 			[pe_invalid] = la_nop,
 		},
@@ -136,11 +153,11 @@ int poparser_feed_line(struct po_parser *p, char* line, size_t buflen) {
 	type = get_type_and_start(&p->info, line, line + buflen, &strstart);
 	switch(action_tbl[p->prev_type][type]) {
 		case la_incr:
-			assert(type == pe_msgid || type == pe_msgstr || type == pe_str);
+			assert(type == pe_msgid || type == pe_msgstr || type == pe_str || type == pe_plural);
 			p->curr_len += get_length_and_convert(&p->info, line + strstart, line + buflen, convbuf + p->curr_len, convbuflen - p->curr_len);
 			break;
 		case la_proc:
-			assert(p->prev_type == pe_msgid || p->prev_type == pe_msgstr);
+			assert(p->prev_type == pe_msgid || p->prev_type == pe_msgstr || p->prev_type == pe_plural);
 			p->info.text = convbuf;
 			p->info.textlen = p->curr_len;
 			p->info.type = p->prev_type;

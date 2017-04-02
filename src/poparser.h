@@ -4,6 +4,7 @@
 
 enum po_entry {
 	pe_msgid = 0,
+	pe_plural,
 	pe_msgstr,
 	pe_maxstr,
 	pe_str = pe_maxstr,
@@ -15,6 +16,7 @@ struct po_info {
 	enum po_entry type;
 	char *text;
 	char charset[12];
+	unsigned int nplurals;
 	size_t textlen;
 };
 
