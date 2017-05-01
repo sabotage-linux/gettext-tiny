@@ -5,6 +5,7 @@
 enum po_entry {
 	pe_msgid = 0,
 	pe_plural,
+	pe_ctxt,
 	pe_msgstr,
 	pe_maxstr,
 	pe_str = pe_maxstr,

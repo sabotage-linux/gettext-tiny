@@ -30,6 +30,8 @@ static enum po_entry get_type_and_start(struct po_info *info, char* lp, char* en
 			result_type = pe_msgid;
 		else if  ((x = strstarts(y, "id_plural")) && isspace(*x))
 			result_type = pe_plural;
+		else if  ((x = strstarts(y, "ctxt")) && isspace(*x))
+			result_type = pe_ctxt;
 		else if ((x = strstarts(y, "str")) && (isspace(*x) ||
 			(x[0] == '[' && (x[1]-0x30) < info->nplurals && x[2] == ']' && (x += 3) && isspace(*x)))) 
 			result_type = pe_msgstr;
@@ -121,6 +123,7 @@ int poparser_feed_line(struct po_parser *p, char* line, size_t buflen) {
 		[pe_str] = {
 			[pe_str] = la_abort,
 			[pe_msgid] = la_abort,
+			[pe_ctxt] = la_abort,
 			[pe_plural] = la_abort,
 			[pe_msgstr] = la_abort,
 			[pe_invalid] = la_abort,
@@ -128,13 +131,23 @@ int poparser_feed_line(struct po_parser *p, char* line, size_t buflen) {
 		[pe_msgid] = {
 			[pe_str] = la_incr,
 			[pe_msgid] = la_abort,
+			[pe_ctxt] = la_abort,
 			[pe_plural] = la_proc,
 			[pe_msgstr] = la_proc,
+			[pe_invalid] = la_proc,
+		},
+		[pe_ctxt] = {
+			[pe_str] = la_incr,
+			[pe_msgid] = la_proc,
+			[pe_ctxt] = la_abort,
+			[pe_plural] = la_abort,
+			[pe_msgstr] = la_abort,
 			[pe_invalid] = la_proc,
 		},
 		[pe_plural] = {
 			[pe_str] = la_incr,
 			[pe_msgid] = la_abort,
+			[pe_ctxt] = la_abort,
 			[pe_plural] = la_abort,
 			[pe_msgstr] = la_proc,
 			[pe_invalid] = la_proc,
@@ -142,14 +155,16 @@ int poparser_feed_line(struct po_parser *p, char* line, size_t buflen) {
 		[pe_msgstr] = {
 			[pe_str] = la_incr,
 			[pe_msgid] = la_proc,
+			[pe_ctxt] = la_abort,
 			[pe_plural] = la_abort,
 			[pe_msgstr] = la_proc,
 			[pe_invalid] = la_proc,
 		},
 		[pe_invalid] = {
-			[pe_str] = la_nop, // this can happen when we have msgstr[2] "" ... "foo", since we only parse msgstr[0] and [1]
+			[pe_str] = la_abort,
 			[pe_msgid] = la_incr,
-			[pe_plural] = la_abort,
+			[pe_ctxt] = la_incr,
+			[pe_plural] = la_incr,
 			[pe_msgstr] = la_incr,
 			[pe_invalid] = la_nop,
 		},
@@ -159,16 +174,17 @@ int poparser_feed_line(struct po_parser *p, char* line, size_t buflen) {
 
 	type = get_type_and_start(&p->info, line, line + buflen, &strstart);
 	if(fuzzymark) {
+		if(type == pe_ctxt && fuzzymark == 1) fuzzymark--;
 		if(type == pe_msgid) fuzzymark--;
 		if(fuzzymark > 0) return 0;
 	}
 	switch(action_tbl[p->prev_type][type]) {
 		case la_incr:
-			assert(type == pe_msgid || type == pe_msgstr || type == pe_str || type == pe_plural);
+			assert(type == pe_msgid || type == pe_msgstr || type == pe_str || type == pe_plural || pe_ctxt);
 			p->curr_len += get_length_and_convert(&p->info, line + strstart, line + buflen, convbuf + p->curr_len, convbuflen - p->curr_len);
 			break;
 		case la_proc:
-			assert(p->prev_type == pe_msgid || p->prev_type == pe_msgstr || p->prev_type == pe_plural);
+			assert(p->prev_type == pe_msgid || p->prev_type == pe_msgstr || p->prev_type == pe_plural || p->prev_type == pe_ctxt);
 			p->info.text = convbuf;
 			p->info.textlen = p->curr_len;
 			p->info.type = p->prev_type;
