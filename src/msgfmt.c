@@ -79,6 +79,23 @@ struct callbackdata {
 	enum passes pass;
 	unsigned off;
 	FILE* out;
+	char msgidbuf1[4096];
+	unsigned milen1;
+	char msgidbuf2[4096];
+	unsigned milen2;
+	char pluralbuf1[4096];
+	unsigned pllen1;
+	char pluralbuf2[4096];
+	unsigned pllen2;
+	char msgctxtbuf[4096];
+	unsigned ctxtlen;
+	char msgstrbuf1[8120];
+	unsigned mslen1;
+	char msgstrbuf2[8120];
+	unsigned mslen2;
+	unsigned msc;
+	unsigned priv_type;
+	unsigned priv_len;
 	unsigned num[pe_maxstr];
 	unsigned len[pe_maxstr];
 	struct strmap *strlist;
@@ -100,6 +117,7 @@ enum sysdep_types {
 	st_priumax,
 	st_max
 };
+
 static const char sysdep_str[][10]={
 	[st_priu32]  = "\x08<PRIu32>",
 	[st_priu64]  = "\x08<PRIu64>",
@@ -184,35 +202,166 @@ static void error(const char* msg) {
 	exit(1);
 }
 
+static inline void writemsg(struct callbackdata *d) {
+	if(d->milen1 != 0) {
+		if(!d->strlist[d->curr[pe_msgid]].str.off)
+			d->strlist[d->curr[pe_msgid]].str.off=d->stroff[pe_msgid];
+
+		if(d->ctxtlen != 0) {
+			memcpy(d->strbuffer[pe_msgid] + d->stroff[pe_msgid], d->msgctxtbuf, d->ctxtlen);
+			d->strlist[d->curr[pe_msgid]].str.len+=d->ctxtlen;
+			d->stroff[pe_msgid]+=d->ctxtlen;
+		}
+		memcpy(d->strbuffer[pe_msgid] + d->stroff[pe_msgid], d->msgidbuf1, d->milen1);
+		d->stroff[pe_msgid]+=d->milen1;
+		d->strlist[d->curr[pe_msgid]].str.len+=d->milen1-1;
+		if(d->pllen1 != 0) {
+			memcpy(d->strbuffer[pe_msgid] + d->stroff[pe_msgid], d->pluralbuf1, d->pllen1);
+			d->strlist[d->curr[pe_msgid]].str.len+=d->pllen1;
+			d->stroff[pe_msgid]+=d->pllen1;
+		}
+		d->curr[pe_msgid]++;
+	}
+	if(d->milen2 != 0) {
+		if(!d->strlist[d->curr[pe_msgid]].str.off)
+			d->strlist[d->curr[pe_msgid]].str.off=d->stroff[pe_msgid];
+
+		if(d->ctxtlen != 0) {
+			memcpy(d->strbuffer[pe_msgid] + d->stroff[pe_msgid], d->msgctxtbuf, d->ctxtlen);
+			d->strlist[d->curr[pe_msgid]].str.len+=d->ctxtlen;
+			d->stroff[pe_msgid]+=d->ctxtlen;
+		}
+		memcpy(d->strbuffer[pe_msgid] + d->stroff[pe_msgid], d->msgidbuf2, d->milen2);
+		d->stroff[pe_msgid]+=d->milen2;
+		d->strlist[d->curr[pe_msgid]].str.len+=d->milen2-1;
+		if(d->pllen2 != 0) {
+			memcpy(d->strbuffer[pe_msgid] + d->stroff[pe_msgid], d->pluralbuf2, d->pllen2);
+			d->strlist[d->curr[pe_msgid]].str.len+=d->pllen2;
+			d->stroff[pe_msgid]+=d->pllen2;
+		}
+		d->curr[pe_msgid]++;
+	}
+
+	d->pllen2=d->pllen1=d->ctxtlen=d->milen1=d->milen2=0;
+}
+
+static inline void writestr(struct callbackdata *d, struct po_info *info) {
+	// msgid xx; msgstr ""; is widely happened, it's invalid
+	if(d->curr[pe_msgstr] 
+		// we do not check the 1st msgid/str
+		&& ((d->curr[pe_msgid] - d->curr[pe_msgstr]) == 0)
+		// in case curr[id] - curr[str] = 2(when sysdeps), .len == 0 is always true
+		&& d->translist[d->curr[pe_msgstr]-1].len == 0) {
+		// str empty, invalid, set back everything, so they will be overrided
+
+		d->len[pe_msgid] -= d->strlist[d->curr[pe_msgstr]-1].str.len + 1;
+		d->strlist[d->curr[pe_msgstr]-1].str.len=0;
+		d->len[pe_msgstr]--;
+		d->stroff[pe_msgid] = d->strlist[d->curr[pe_msgstr]-1].str.off;
+		d->stroff[pe_msgstr] = d->translist[d->curr[pe_msgstr]-1].off;
+		d->num[pe_msgid]--;
+		d->curr[pe_msgid]--;
+		d->num[pe_msgstr]--;
+		d->curr[pe_msgstr]--;
+		d->mslen1=d->mslen2=d->msc=0;
+		return;
+	}
+
+	if(d->msc && d->msc <= info->nplurals) {
+		// plural <= nplurals is allowed
+		d->translist[d->curr[pe_msgstr]].len=d->mslen1-1;
+		d->translist[d->curr[pe_msgstr]].off=d->stroff[pe_msgstr];
+		d->strlist[d->curr[pe_msgstr]].trans = &d->translist[d->curr[pe_msgstr]];
+
+		memcpy(d->strbuffer[pe_msgstr] + d->stroff[pe_msgstr], d->msgstrbuf1, d->mslen1);
+		d->stroff[pe_msgstr]+=d->mslen1;
+		d->curr[pe_msgstr]++;
+
+		if(d->mslen2 != 0) {
+			d->translist[d->curr[pe_msgstr]].len=d->mslen2-1;
+			d->translist[d->curr[pe_msgstr]].off=d->stroff[pe_msgstr];
+			d->strlist[d->curr[pe_msgstr]].trans = &d->translist[d->curr[pe_msgstr]];
+
+			memcpy(d->strbuffer[pe_msgstr] + d->stroff[pe_msgstr], d->msgstrbuf2, d->mslen2);
+			d->stroff[pe_msgstr]+=d->mslen2;
+			d->curr[pe_msgstr]++;
+		}
+
+		d->mslen1=d->mslen2=d->msc=0;
+	}
+}
+
 int process_line_callback(struct po_info* info, void* user) {
 	struct callbackdata *d = (struct callbackdata *) user;
-	assert(info->type == pe_msgid || info->type == pe_msgstr);
+	assert(info->type == pe_msgid || info->type == pe_ctxt || info->type == pe_msgstr || info->type == pe_plural);
 	char **sysdeps;
 	unsigned len, count, i, l;
 	switch(d->pass) {
 		case pass_collect_sizes:
 			sysdep_transform(info->text, info->textlen, &len, &count, 1);
 			d->num[info->type] += count;
+			if(info->type == pe_msgid && count == 2 && d->priv_type == pe_ctxt) {
+				// ctxt meets msgid with sysdeps, multiply num and len to suit it
+				d->len[pe_ctxt] += d->priv_len +1;
+				d->num[pe_ctxt]++;
+			}
+			if(count != 1 && info->type == pe_ctxt) {
+				// except msgid, str, plural, all other types should not have sysdeps
+				abort();
+			}
+
+			d->priv_type = info->type;
+			d->priv_len = len;
 			d->len[info->type] += len +1;
 			break;
 		case pass_second:
 			sysdeps = sysdep_transform(info->text, info->textlen, &len, &count, 0);
-			if(info->type == pe_msgstr) {
-				// a mismatch of one is allowed, as there may be msgid followed by msgid_plural
-				if((unsigned)(d->curr[pe_msgid] - (d->curr[pe_msgstr] + count)) > 1)
-					error("count of msgid/msgstr mismatch\n");
-			}
 			for(i=0;i<count;i++) {
 				l = strlen(sysdeps[i]);
-				memcpy(d->strbuffer[info->type] + d->stroff[info->type], sysdeps[i], l+1);
-				if(info->type == pe_msgid)
-					d->strlist[d->curr[info->type]].str = (struct strtbl){.len=l, .off=d->stroff[info->type]};
-				else {
-					d->translist[d->curr[info->type]] = (struct strtbl){.len=l, .off=d->stroff[info->type]};
-					d->strlist[d->curr[info->type]].trans = &d->translist[d->curr[info->type]];
+				if(info->type == pe_msgid) {
+					// after str, it's msgid or msgctxt
+					writestr(d, info);
+					// just copy, it's written down when writemsg()
+					if(i==0) {
+						assert(l+1 <= sizeof(d->msgidbuf1));
+						memcpy(d->msgidbuf1, sysdeps[i], l+1);
+						d->milen1 = l+1;
+					} else {
+						assert(l+1 <= sizeof(d->msgidbuf2));
+						memcpy(d->msgidbuf2, sysdeps[i], l+1);
+						d->milen2 = l+1;
+					}
+				} else if(info->type == pe_plural) {
+					if(i==0) {
+						assert(l+1 <= sizeof(d->pluralbuf1));
+						memcpy(d->pluralbuf1, sysdeps[i], l+1);
+						d->pllen1 = l+1;
+					} else {
+						assert(l+1 <= sizeof(d->pluralbuf2));
+						memcpy(d->pluralbuf2, sysdeps[i], l+1);
+						d->pllen2 = l+1;
+					}
+				} else if(info->type == pe_ctxt) {
+					writestr(d, info);
+					assert(l+1 <= sizeof(d->msgctxtbuf));
+					d->ctxtlen = l+1;
+					memcpy(d->msgctxtbuf, sysdeps[i], l);
+					d->msgctxtbuf[l] = 0x4;//EOT
+				} else {
+					writemsg(d);
+					// just copy, it's written down when writestr()
+					if(i==0) {
+						assert(l+1 <= sizeof(d->msgstrbuf1)/info->nplurals);
+						memcpy(&d->msgstrbuf1[d->mslen1], sysdeps[i], l+1);
+						d->mslen1 += l+1;
+						d->msc++;
+					} else {
+						// sysdeps exist
+						assert(l+1 <= sizeof(d->msgstrbuf2)/info->nplurals);
+						memcpy(&d->msgstrbuf2[d->mslen2], sysdeps[i], l+1);
+						d->mslen2 += l+1;
+					}
 				}
-				d->curr[info->type]++;
-				d->stroff[info->type]+=l+1;
 			}
 			free(sysdeps);
 			break;
@@ -231,74 +380,87 @@ int process(FILE *in, FILE *out) {
 		.num = {
 			[pe_msgid] = 0,
 			[pe_msgstr] = 0,
+			[pe_plural] = 0,
+			[pe_ctxt] = 0,
 		},
 		.len = {
 			[pe_msgid] = 0,
 			[pe_msgstr] = 0,
+			[pe_plural] = 0,
+			[pe_ctxt] = 0,
 		},
 		.off = 0,
 		.out = out,
 		.pass = pass_first,
+		.ctxtlen = 0,
+		.pllen1 = 0,
+		.pllen2 = 0,
+		.milen1 = 0,
+		.milen2 = 0,
+		.mslen1 = 0,
+		.mslen2 = 0,
+		.msc = 0,
 	};
 
 	struct po_parser pb, *p = &pb;
-	int invalid_file = 0;
 
 	mohdr.off_tbl_trans = mohdr.off_tbl_org;
 	for(d.pass = pass_first; d.pass <= pass_second; d.pass++) {
 		if(d.pass == pass_second) {
 			// start of second pass:
 			// check that data gathered in first pass is consistent
-			if(d.num[pe_msgid] != d.num[pe_msgstr]) {
+			if((d.num[pe_msgid] + d.num[pe_plural] * (p->info.nplurals - 1)) < d.num[pe_msgstr]) {
 				// one should actually abort here,
 				// but gnu gettext simply writes an empty .mo and returns success.
 				//abort();
 				fprintf(stderr, "warning: mismatch of msgid/msgstr count, writing empty .mo file\n");
 				d.num[pe_msgid] = 0;
-				invalid_file = 1;
+				return 0;
 			}
 
-			// calculate header fields from len and num arrays
-			mohdr.numstring = d.num[pe_msgid];
-			mohdr.off_tbl_org = sizeof(struct mo_hdr);
-			mohdr.off_tbl_trans = mohdr.off_tbl_org + d.num[pe_msgid] * (sizeof(unsigned)*2);
-			// print header
-			fwrite(&mohdr, sizeof(mohdr), 1, out);
-			// set offset startvalue
-			d.off = mohdr.off_tbl_trans + d.num[pe_msgid] * (sizeof(unsigned)*2);
-			if(invalid_file) return 0;
-
-			d.strlist = malloc(d.num[pe_msgid] * sizeof(struct strmap));
-			d.translist = malloc(d.num[pe_msgstr] * sizeof(struct strtbl));
-			d.strbuffer[pe_msgid] = malloc(d.len[pe_msgid]);
-			d.strbuffer[pe_msgstr] = malloc(d.len[pe_msgstr]);
+			d.strlist = calloc(d.num[pe_msgid] * sizeof(struct strmap), 1);
+			d.translist = calloc(d.num[pe_msgstr] * sizeof(struct strtbl), 1);
+			d.strbuffer[pe_msgid] = calloc(d.len[pe_msgid]+d.len[pe_plural]+d.len[pe_ctxt], 1);
+			d.strbuffer[pe_msgstr] = calloc(d.len[pe_msgstr], 1);
 			d.stroff[pe_msgid] = d.stroff[pe_msgstr] = 0;
-			assert(d.strlist && d.translist && d.strbuffer[0] && d.strbuffer[1]);
+			assert(d.strlist && d.translist && d.strbuffer[pe_msgid] && d.strbuffer[pe_msgstr]);
 		}
+
 		poparser_init(p, convbuf, sizeof(convbuf), process_line_callback, &d);
 
 		while((lp = fgets(line, sizeof(line), in))) {
 			poparser_feed_line(p, lp, sizeof(line));
 		}
-
 		poparser_finish(p);
+		writestr(&d, &p->info);
 
+		if(d.pass == pass_second) {
+			// calculate header fields from len and num arrays
+			mohdr.numstring = d.num[pe_msgid];
+			mohdr.off_tbl_org = sizeof(struct mo_hdr);
+			mohdr.off_tbl_trans = mohdr.off_tbl_org + d.num[pe_msgid] * (sizeof(unsigned)*2);
+			// set offset startvalue
+			d.off = mohdr.off_tbl_trans + d.num[pe_msgid] * (sizeof(unsigned)*2);
+		}
 		fseek(in, 0, SEEK_SET);
 	}
 
 	cb_for_qsort = &d;
 	qsort(d.strlist, d.num[pe_msgid], sizeof (struct strmap), strmap_comp);
 	unsigned i;
-	for(i = 0; i < d.num[0]; i++) {
+
+	// print header
+	fwrite(&mohdr, sizeof(mohdr), 1, out);
+	for(i = 0; i < d.num[pe_msgid]; i++) {
 		d.strlist[i].str.off += d.off;
 		fwrite(&d.strlist[i].str, sizeof(struct strtbl), 1, d.out);
 	}
-	for(i = 0; i < d.num[1]; i++) {
-		d.strlist[i].trans->off += d.off + d.len[0];
+	for(i = 0; i < d.num[pe_msgid]; i++) {
+		d.strlist[i].trans->off += d.off + d.len[pe_msgid] + d.len[pe_plural] + d.len[pe_ctxt];
 		fwrite(d.strlist[i].trans, sizeof(struct strtbl), 1, d.out);
 	}
-	fwrite(d.strbuffer[0], d.len[0], 1, d.out);
-	fwrite(d.strbuffer[1], d.len[1], 1, d.out);
+	fwrite(d.strbuffer[pe_msgid], d.len[pe_msgid]+d.len[pe_plural]+d.len[pe_ctxt], 1, d.out);
+	fwrite(d.strbuffer[pe_msgstr], d.len[pe_msgstr], 1, d.out);
 
 	return 0;
 }
@@ -352,6 +514,7 @@ int main(int argc, char**argv) {
 					streq(A+2, "check-accelerators") ||
 					streq(A+2, "no-hash") ||
 					streq(A+2, "verbose") ||
+					streq(A+2, "v") ||
 					strstarts(A+2, "check-accelerators=") ||
 					strstarts(A+2, "resource=") ||
 					strstarts(A+2, "locale=")
@@ -377,7 +540,7 @@ int main(int argc, char**argv) {
 				streq(A+1, "c") ||
 				streq(A+1, "C")
 			) {
-			} else if (streq(A+1, "v")) {
+			} else if (streq(A+1, "V")) {
 				version();
 			} else if (streq(A+1, "d")) {
 				// no support for -d at this time

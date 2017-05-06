@@ -16,6 +16,7 @@ msgcmp
 msgattrib
 msggen
 msgexec
+autopoint
 msgmerge
 msginit
 gettextize
