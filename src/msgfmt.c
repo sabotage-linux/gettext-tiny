@@ -323,22 +323,27 @@ int process_line_callback(struct po_info* info, void* user) {
 					writestr(d, info);
 					// just copy, it's written down when writemsg()
 					if(i==0) {
+						assert(l+1 <= sizeof(d->msgidbuf1));
 						memcpy(d->msgidbuf1, sysdeps[i], l+1);
 						d->milen1 = l+1;
 					} else {
+						assert(l+1 <= sizeof(d->msgidbuf2));
 						memcpy(d->msgidbuf2, sysdeps[i], l+1);
 						d->milen2 = l+1;
 					}
 				} else if(info->type == pe_plural) {
 					if(i==0) {
+						assert(l+1 <= sizeof(d->pluralbuf1));
 						memcpy(d->pluralbuf1, sysdeps[i], l+1);
 						d->pllen1 = l+1;
 					} else {
+						assert(l+1 <= sizeof(d->pluralbuf2));
 						memcpy(d->pluralbuf2, sysdeps[i], l+1);
 						d->pllen2 = l+1;
 					}
 				} else if(info->type == pe_ctxt) {
 					writestr(d, info);
+					assert(l+1 <= sizeof(d->msgctxtbuf));
 					d->ctxtlen = l+1;
 					memcpy(d->msgctxtbuf, sysdeps[i], l);
 					d->msgctxtbuf[l] = 0x4;//EOT
@@ -346,11 +351,13 @@ int process_line_callback(struct po_info* info, void* user) {
 					writemsg(d);
 					// just copy, it's written down when writestr()
 					if(i==0) {
+						assert(l+1 <= sizeof(d->msgstrbuf1)/info->nplurals);
 						memcpy(&d->msgstrbuf1[d->mslen1], sysdeps[i], l+1);
 						d->mslen1 += l+1;
 						d->msc++;
 					} else {
 						// sysdeps exist
+						assert(l+1 <= sizeof(d->msgstrbuf2)/info->nplurals);
 						memcpy(&d->msgstrbuf2[d->mslen2], sysdeps[i], l+1);
 						d->mslen2 += l+1;
 					}
