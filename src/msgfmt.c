@@ -273,7 +273,7 @@ int process(FILE *in, FILE *out) {
 			d.strbuffer[pe_msgid] = calloc(d.len[pe_msgid], 1);
 			d.strbuffer[pe_msgstr] = calloc(d.len[pe_msgstr], 1);
 			d.stroff[pe_msgid] = d.stroff[pe_msgstr] = 0;
-			assert(d.strlist && d.translist && d.strbuffer[0] && d.strbuffer[1]);
+			assert(d.strlist && d.translist && d.strbuffer[pe_msgid] && d.strbuffer[pe_msgstr]);
 		}
 		poparser_init(p, convbuf, sizeof(convbuf), process_line_callback, &d);
 
@@ -289,16 +289,16 @@ int process(FILE *in, FILE *out) {
 	cb_for_qsort = &d;
 	qsort(d.strlist, d.num[pe_msgid], sizeof (struct strmap), strmap_comp);
 	unsigned i;
-	for(i = 0; i < d.num[0]; i++) {
+	for(i = 0; i < d.num[pe_msgid]; i++) {
 		d.strlist[i].str.off += d.off;
 		fwrite(&d.strlist[i].str, sizeof(struct strtbl), 1, d.out);
 	}
-	for(i = 0; i < d.num[1]; i++) {
+	for(i = 0; i < d.num[pe_msgstr]; i++) {
 		d.strlist[i].trans->off += d.off + d.len[0];
 		fwrite(d.strlist[i].trans, sizeof(struct strtbl), 1, d.out);
 	}
-	fwrite(d.strbuffer[0], d.len[0], 1, d.out);
-	fwrite(d.strbuffer[1], d.len[1], 1, d.out);
+	fwrite(d.strbuffer[pe_msgid], d.len[pe_msgid], 1, d.out);
+	fwrite(d.strbuffer[pe_msgstr], d.len[pe_msgstr], 1, d.out);
 
 	return 0;
 }
