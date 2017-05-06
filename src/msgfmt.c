@@ -268,10 +268,10 @@ int process(FILE *in, FILE *out) {
 			d.off = mohdr.off_tbl_trans + d.num[pe_msgid] * (sizeof(unsigned)*2);
 			if(invalid_file) return 0;
 
-			d.strlist = malloc(d.num[pe_msgid] * sizeof(struct strmap));
-			d.translist = malloc(d.num[pe_msgstr] * sizeof(struct strtbl));
-			d.strbuffer[pe_msgid] = malloc(d.len[pe_msgid]);
-			d.strbuffer[pe_msgstr] = malloc(d.len[pe_msgstr]);
+			d.strlist = calloc(d.num[pe_msgid] * sizeof(struct strmap), 1);
+			d.translist = calloc(d.num[pe_msgstr] * sizeof(struct strtbl), 1);
+			d.strbuffer[pe_msgid] = calloc(d.len[pe_msgid], 1);
+			d.strbuffer[pe_msgstr] = calloc(d.len[pe_msgstr], 1);
 			d.stroff[pe_msgid] = d.stroff[pe_msgstr] = 0;
 			assert(d.strlist && d.translist && d.strbuffer[0] && d.strbuffer[1]);
 		}
