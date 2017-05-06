@@ -89,9 +89,9 @@ struct callbackdata {
 	unsigned pllen2;
 	char msgctxtbuf[4096];
 	unsigned ctxtlen;
-	char msgstrbuf1[4096];
+	char msgstrbuf1[8120];
 	unsigned mslen1;
-	char msgstrbuf2[4096];
+	char msgstrbuf2[8120];
 	unsigned mslen2;
 	unsigned msc;
 	unsigned priv_type;
