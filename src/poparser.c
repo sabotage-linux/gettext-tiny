@@ -100,7 +100,7 @@ void poparser_init(struct po_parser *p, char* workbuf, size_t bufsize, poparser_
 	p->cbdata = cbdata;
 	*(p->info.charset) = 0;
 	// nplurals = 2 by default
-	p->info.nplurals = 50;
+	p->info.nplurals = 2;
 	fuzzymark = 0;
 }
 
