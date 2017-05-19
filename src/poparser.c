@@ -24,8 +24,7 @@ static enum po_entry get_type_and_start(struct po_info *info, char* lp, char* en
 		inv:
 		*stringstart = 0;
 		return pe_invalid;
-	}
-	if((y = strstarts(lp, "msg"))) {
+	} else if((y = strstarts(lp, "msg"))) {
 		if((x = strstarts(y, "id")) && isspace(*x))
 			result_type = pe_msgid;
 		else if  ((x = strstarts(y, "id_plural")) && isspace(*x))
@@ -41,7 +40,7 @@ static enum po_entry get_type_and_start(struct po_info *info, char* lp, char* en
 		if(*x != '"') abort();
 		conv:
 		*stringstart = ((size_t) x - start) + 1;
-	} else if(*lp == '"') {
+	} else if(lp[0] == '"') {
 		if(!(*info->charset)) {
 			if(x = strstr(lp, "charset=")) {
 				// charset=xxx\\n
@@ -54,7 +53,8 @@ static enum po_entry get_type_and_start(struct po_info *info, char* lp, char* en
 			}
 		}
 		if(x = strstr(lp, "nplurals="))
-			info->nplurals = *(x+9) - 0x30;
+			if(*(x+9) - 0x30)
+				info->nplurals = *(x+9) - 0x30;
 		result_type = pe_str;
 		x = lp;
 		goto conv;
