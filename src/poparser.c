@@ -164,8 +164,8 @@ int poparser_feed_line(struct po_parser *p, char* line, size_t buflen) {
 			[pe_str] = la_abort,
 			[pe_msgid] = la_incr,
 			[pe_ctxt] = la_incr,
-			[pe_plural] = la_incr,
-			[pe_msgstr] = la_incr,
+			[pe_plural] = la_abort,
+			[pe_msgstr] = la_abort,
 			[pe_invalid] = la_nop,
 		},
 	};
