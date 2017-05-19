@@ -409,7 +409,7 @@ int process(FILE *in, FILE *out) {
 		if(d.pass == pass_second) {
 			// start of second pass:
 			// check that data gathered in first pass is consistent
-			if((d.num[pe_msgid] + d.num[pe_plural] * (p->info.nplurals - 1)) < d.num[pe_msgstr]) {
+			if((d.num[pe_msgstr] < d.num[pe_msgid]) || (d.num[pe_msgstr] > (d.num[pe_msgid] + d.num[pe_plural] * (p->info.nplurals - 1)))) {
 				// one should actually abort here,
 				// but gnu gettext simply writes an empty .mo and returns success.
 				//abort();
