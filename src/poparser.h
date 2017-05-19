@@ -28,6 +28,7 @@ struct po_parser {
 	char *buf;
 	size_t bufsize;
 	enum po_entry prev_type;
+	enum po_entry prev_rtype;
 	unsigned curr_len;
 	poparser_callback cb;
 	void *cbdata;

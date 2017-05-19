@@ -96,6 +96,7 @@ void poparser_init(struct po_parser *p, char* workbuf, size_t bufsize, poparser_
 	p->bufsize = bufsize;
 	p->cb = cb;
 	p->prev_type = pe_invalid;
+	p->prev_rtype = pe_invalid;
 	p->curr_len = 0;
 	p->cbdata = cbdata;
 	*(p->info.charset) = 0;
@@ -173,6 +174,10 @@ int poparser_feed_line(struct po_parser *p, char* line, size_t buflen) {
 	enum po_entry type;
 
 	type = get_type_and_start(&p->info, line, line + buflen, &strstart);
+	if(p->prev_rtype != pe_invalid && action_tbl[p->prev_rtype][type] == la_abort)
+		abort();
+	if(type != pe_invalid && type != pe_str)
+		p->prev_rtype = type;
 	if(fuzzymark) {
 		if(type == pe_ctxt && fuzzymark == 1) fuzzymark--;
 		if(type == pe_msgid) fuzzymark--;
