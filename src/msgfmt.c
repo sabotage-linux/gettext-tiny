@@ -79,21 +79,22 @@ struct callbackdata {
 	enum passes pass;
 	unsigned off;
 	FILE* out;
-	char msgidbuf1[4096];
 	unsigned milen1;
-	char msgidbuf2[4096];
 	unsigned milen2;
-	char pluralbuf1[4096];
 	unsigned pllen1;
-	char pluralbuf2[4096];
 	unsigned pllen2;
-	char msgctxtbuf[4096];
 	unsigned ctxtlen;
-	char msgstrbuf1[8120];
 	unsigned mslen1;
-	char msgstrbuf2[8120];
 	unsigned mslen2;
 	unsigned msc;
+	unsigned maxlen;
+	char* msgidbuf1;
+	char* msgidbuf2;
+	char* pluralbuf1;
+	char* pluralbuf2;
+	char* msgctxtbuf;
+	char* msgstrbuf1;
+	char* msgstrbuf2;
 	unsigned priv_type;
 	unsigned priv_len;
 	unsigned num[pe_maxstr];
@@ -313,37 +314,36 @@ int process_line_callback(struct po_info* info, void* user) {
 			d->priv_type = info->type;
 			d->priv_len = len;
 			d->len[info->type] += len +1;
+
+			if(len+1 > d->maxlen)
+				d->maxlen = len+1;
 			break;
 		case pass_second:
 			sysdeps = sysdep_transform(info->text, info->textlen, &len, &count, 0);
 			for(i=0;i<count;i++) {
 				l = strlen(sysdeps[i]);
+				assert(l+1 <= d->maxlen);
 				if(info->type == pe_msgid) {
 					// after str, it's msgid or msgctxt
 					writestr(d, info);
 					// just copy, it's written down when writemsg()
 					if(i==0) {
-						assert(l+1 <= sizeof(d->msgidbuf1));
 						memcpy(d->msgidbuf1, sysdeps[i], l+1);
 						d->milen1 = l+1;
 					} else {
-						assert(l+1 <= sizeof(d->msgidbuf2));
 						memcpy(d->msgidbuf2, sysdeps[i], l+1);
 						d->milen2 = l+1;
 					}
 				} else if(info->type == pe_plural) {
 					if(i==0) {
-						assert(l+1 <= sizeof(d->pluralbuf1));
 						memcpy(d->pluralbuf1, sysdeps[i], l+1);
 						d->pllen1 = l+1;
 					} else {
-						assert(l+1 <= sizeof(d->pluralbuf2));
 						memcpy(d->pluralbuf2, sysdeps[i], l+1);
 						d->pllen2 = l+1;
 					}
 				} else if(info->type == pe_ctxt) {
 					writestr(d, info);
-					assert(l+1 <= sizeof(d->msgctxtbuf));
 					d->ctxtlen = l+1;
 					memcpy(d->msgctxtbuf, sysdeps[i], l);
 					d->msgctxtbuf[l] = 0x4;//EOT
@@ -351,13 +351,11 @@ int process_line_callback(struct po_info* info, void* user) {
 					writemsg(d);
 					// just copy, it's written down when writestr()
 					if(i==0) {
-						assert(l+1 <= sizeof(d->msgstrbuf1)/info->nplurals);
 						memcpy(&d->msgstrbuf1[d->mslen1], sysdeps[i], l+1);
 						d->mslen1 += l+1;
 						d->msc++;
 					} else {
 						// sysdeps exist
-						assert(l+1 <= sizeof(d->msgstrbuf2)/info->nplurals);
 						memcpy(&d->msgstrbuf2[d->mslen2], sysdeps[i], l+1);
 						d->mslen2 += l+1;
 					}
@@ -400,6 +398,7 @@ int process(FILE *in, FILE *out) {
 		.mslen1 = 0,
 		.mslen2 = 0,
 		.msc = 0,
+		.maxlen = 0,
 	};
 
 	struct po_parser pb, *p = &pb;
@@ -418,12 +417,20 @@ int process(FILE *in, FILE *out) {
 				return 0;
 			}
 
+			d.msgidbuf1 = calloc(d.maxlen*5+2*d.maxlen*p->info.nplurals, 1);
+			d.msgidbuf2 = d.msgidbuf1 + d.maxlen;
+			d.pluralbuf1 = d.msgidbuf2 + d.maxlen;
+			d.pluralbuf2 = d.pluralbuf1 + d.maxlen;
+			d.msgctxtbuf = d.pluralbuf2 + d.maxlen;
+			d.msgstrbuf1 = d.msgctxtbuf + d.maxlen;
+			d.msgstrbuf2 = d.msgstrbuf1 + d.maxlen*p->info.nplurals;
+
 			d.strlist = calloc(d.num[pe_msgid] * sizeof(struct strmap), 1);
 			d.translist = calloc(d.num[pe_msgstr] * sizeof(struct strtbl), 1);
 			d.strbuffer[pe_msgid] = calloc(d.len[pe_msgid]+d.len[pe_plural]+d.len[pe_ctxt], 1);
 			d.strbuffer[pe_msgstr] = calloc(d.len[pe_msgstr], 1);
 			d.stroff[pe_msgid] = d.stroff[pe_msgstr] = 0;
-			assert(d.strlist && d.translist && d.strbuffer[pe_msgid] && d.strbuffer[pe_msgstr]);
+			assert(d.msgidbuf1 && d.strlist && d.translist && d.strbuffer[pe_msgid] && d.strbuffer[pe_msgstr]);
 		}
 
 		poparser_init(p, convbuf, sizeof(convbuf), process_line_callback, &d);
