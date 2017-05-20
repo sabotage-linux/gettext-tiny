@@ -32,7 +32,7 @@ static enum po_entry get_type_and_start(struct po_info *info, char* lp, char* en
 		else if  ((x = strstarts(y, "ctxt")) && isspace(*x))
 			result_type = pe_ctxt;
 		else if ((x = strstarts(y, "str")) && (isspace(*x) ||
-			(x[0] == '[' && (x[1]-0x30) < info->nplurals && x[2] == ']' && (x += 3) && isspace(*x)))) 
+			(x[0] == '[' && (x[1]-'0') < info->nplurals && x[2] == ']' && (x += 3) && isspace(*x)))) 
 			result_type = pe_msgstr;
 		else
 			goto inv;
@@ -53,8 +53,8 @@ static enum po_entry get_type_and_start(struct po_info *info, char* lp, char* en
 			}
 		}
 		if(x = strstr(lp, "nplurals="))
-			if(*(x+9) - 0x30)
-				info->nplurals = *(x+9) - 0x30;
+			if(*(x+9) - '0')
+				info->nplurals = *(x+9) - '0';
 		result_type = pe_str;
 		x = lp;
 		goto conv;
