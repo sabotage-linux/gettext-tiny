@@ -475,7 +475,21 @@ int process(FILE *in, FILE *out) {
 
 void set_file(int out, char* fn, FILE** dest) {
 	if(streq(fn, "-")) {
-		*dest = out ? stdout : stdin;
+		if(out) {
+			*dest = stdout;
+		} else {
+			char b[4096];
+			size_t n=0;
+			FILE* tmpf = tmpfile();
+			if(!tmpf)
+				perror("tmpfile");
+
+			while((n=fread(b, sizeof(*b), sizeof(b), stdin)) > 0)
+				fwrite(b, sizeof(*b), n, tmpf);
+
+			fseek(tmpf, 0, SEEK_SET);
+			*dest = tmpf;
+		}
 	} else {
 		*dest = fopen(fn, out ? "w" : "r");
 	}
@@ -553,9 +567,15 @@ int main(int argc, char**argv) {
 				// no support for -d at this time
 				fprintf(stderr, "EINVAL\n");
 				exit(1);
-			} else if (streq(A+1, "h")) syntax();
+			} else if (streq(A+1, "h")) {
+				syntax();
+			} else if (expect_in_fn) {
+				set_file(0, A, &in);
+				expect_in_fn = 0;
+			}
 		} else if (expect_in_fn) {
 			set_file(0, A, &in);
+			expect_in_fn = 0;
 		}
 	}
 	if(in == NULL || out == NULL) {
