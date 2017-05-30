@@ -248,22 +248,18 @@ static inline void writemsg(struct callbackdata *d) {
 
 static inline void writestr(struct callbackdata *d, struct po_info *info) {
 	// msgid xx; msgstr ""; is widely happened, it's invalid
-	if(d->curr[pe_msgstr] 
-		// we do not check the 1st msgid/str
-		&& ((d->curr[pe_msgid] - d->curr[pe_msgstr]) == 0)
-		// in case curr[id] - curr[str] = 2(when sysdeps), .len == 0 is always true
-		&& d->translist[d->curr[pe_msgstr]-1].len == 0) {
-		// str empty, invalid, set back everything, so they will be overrided
-
-		d->len[pe_msgid] -= d->strlist[d->curr[pe_msgstr]-1].str.len + 1;
-		d->strlist[d->curr[pe_msgstr]-1].str.len=0;
-		d->len[pe_msgstr]--;
-		d->stroff[pe_msgid] = d->strlist[d->curr[pe_msgstr]-1].str.off;
-		d->stroff[pe_msgstr] = d->translist[d->curr[pe_msgstr]-1].off;
-		d->num[pe_msgid]--;
+	if(d->curr[pe_msgstr]
+	// we do not check the 1st msgid/str
+	&& ((d->curr[pe_msgid] - d->curr[pe_msgstr]) == 1)
+	&& !d->msc) {
 		d->curr[pe_msgid]--;
+		d->stroff[pe_msgid] -= d->strlist[d->curr[pe_msgid]].str.len;
+		d->strlist[d->curr[pe_msgid]].str.off = 0;
+		d->strlist[d->curr[pe_msgid]].str.len = 0;
+		d->len[pe_msgstr]--;
+		d->len[pe_msgid]--;
+		d->num[pe_msgid]--;
 		d->num[pe_msgstr]--;
-		d->curr[pe_msgstr]--;
 		d->mslen1=d->mslen2=d->msc=0;
 		return;
 	}
@@ -350,14 +346,16 @@ int process_line_callback(struct po_info* info, void* user) {
 				} else {
 					writemsg(d);
 					// just copy, it's written down when writestr()
-					if(i==0) {
-						memcpy(&d->msgstrbuf1[d->mslen1], sysdeps[i], l+1);
-						d->mslen1 += l+1;
-						d->msc++;
-					} else {
-						// sysdeps exist
-						memcpy(&d->msgstrbuf2[d->mslen2], sysdeps[i], l+1);
-						d->mslen2 += l+1;
+					if(l) {
+						if(i==0) {
+							memcpy(&d->msgstrbuf1[d->mslen1], sysdeps[i], l+1);
+							d->mslen1 += l+1;
+							d->msc++;
+						} else {
+							// sysdeps exist
+							memcpy(&d->msgstrbuf2[d->mslen2], sysdeps[i], l+1);
+							d->mslen2 += l+1;
+						}
 					}
 				}
 			}
