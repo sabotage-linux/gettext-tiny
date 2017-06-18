@@ -248,23 +248,21 @@ static inline void writemsg(struct callbackdata *d) {
 
 static inline void writestr(struct callbackdata *d, struct po_info *info) {
 	// msgid xx; msgstr ""; is widely happened, it's invalid
-	if(d->curr[pe_msgstr]
-	// we do not check the 1st msgid/str
-	&& ((d->curr[pe_msgid] - d->curr[pe_msgstr]) == 1)
-	&& !d->msc) {
-		d->curr[pe_msgid]--;
-		d->stroff[pe_msgid] -= d->strlist[d->curr[pe_msgid]].str.len;
-		d->strlist[d->curr[pe_msgid]].str.off = 0;
-		d->strlist[d->curr[pe_msgid]].str.len = 0;
+	if(!d->msc) {
+		d->len[pe_msgid]-=d->milen1;
+		d->len[pe_msgid]-=d->milen2;
+		d->len[pe_plural]-=d->pllen1;
+		d->len[pe_plural]-=d->pllen2;
+		d->len[pe_ctxt]-=d->ctxtlen;
 		d->len[pe_msgstr]--;
-		d->len[pe_msgid]--;
 		d->num[pe_msgid]--;
 		d->num[pe_msgstr]--;
-		d->mslen1=d->mslen2=d->msc=0;
+		d->pllen2=d->pllen1=d->ctxtlen=d->milen1=d->milen2=d->mslen1=d->mslen2=d->msc=0;
 		return;
 	}
 
 	if(d->msc && d->msc <= info->nplurals) {
+		writemsg(d);
 		// plural <= nplurals is allowed
 		d->translist[d->curr[pe_msgstr]].len=d->mslen1-1;
 		d->translist[d->curr[pe_msgstr]].off=d->stroff[pe_msgstr];
@@ -274,7 +272,7 @@ static inline void writestr(struct callbackdata *d, struct po_info *info) {
 		d->stroff[pe_msgstr]+=d->mslen1;
 		d->curr[pe_msgstr]++;
 
-		if(d->mslen2 != 0) {
+		if(d->mslen2) {
 			d->translist[d->curr[pe_msgstr]].len=d->mslen2-1;
 			d->translist[d->curr[pe_msgstr]].off=d->stroff[pe_msgstr];
 			d->strlist[d->curr[pe_msgstr]].trans = &d->translist[d->curr[pe_msgstr]];
@@ -321,7 +319,8 @@ int process_line_callback(struct po_info* info, void* user) {
 				assert(l+1 <= d->maxlen);
 				if(info->type == pe_msgid) {
 					// after str, it's msgid or msgctxt
-					writestr(d, info);
+					if(d->milen1)
+						writestr(d, info);
 					// just copy, it's written down when writemsg()
 					if(i==0) {
 						memcpy(d->msgidbuf1, sysdeps[i], l+1);
@@ -344,7 +343,6 @@ int process_line_callback(struct po_info* info, void* user) {
 					memcpy(d->msgctxtbuf, sysdeps[i], l);
 					d->msgctxtbuf[l] = 0x4;//EOT
 				} else {
-					writemsg(d);
 					// just copy, it's written down when writestr()
 					if(l) {
 						if(i==0) {
@@ -437,7 +435,8 @@ int process(FILE *in, FILE *out) {
 			poparser_feed_line(p, lp, sizeof(line));
 		}
 		poparser_finish(p);
-		writestr(&d, &p->info);
+		if(d.pass == pass_second)
+			writestr(&d, &p->info);
 
 		if(d.pass == pass_second) {
 			// calculate header fields from len and num arrays
