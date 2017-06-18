@@ -17,7 +17,7 @@ static enum po_entry get_type_and_start(struct po_info *info, char* lp, char* en
 	while(isspace(*lp) && lp < end) lp++;
 	if(lp[0] == '#') {
 		char *s;
-		if(s = strstr(lp, "fuzzy")) {
+		if(s = strstr(lp, ", fuzzy")) {
 			if(fuzzymark != 0) fuzzymark++;
 			else fuzzymark=2;
 		}
