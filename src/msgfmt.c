@@ -318,9 +318,9 @@ int process_line_callback(struct po_info* info, void* user) {
 				l = strlen(sysdeps[i]);
 				assert(l+1 <= d->maxlen);
 				if(info->type == pe_msgid) {
-					// after str, it's msgid or msgctxt
-					if(d->milen1)
+					if(i==0 && d->milen1)
 						writestr(d, info);
+
 					// just copy, it's written down when writemsg()
 					if(i==0) {
 						memcpy(d->msgidbuf1, sysdeps[i], l+1);
