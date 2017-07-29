@@ -5,7 +5,16 @@ libdir=$(prefix)/lib
 sysconfdir=$(prefix)/etc
 m4dir=$(prefix)/share/gettext-tiny
 
-LIBSRC = $(sort $(wildcard libintl/*.c))
+ifeq ($(LIBINTL), MUSL)
+	LIBSRC = libintl/libintl-musl.c
+	HEADERS =
+else ifeq ($(LIBINTL), NONE)
+	LIBSRC =
+	HEADERS =
+else
+	LIBSRC = libintl/libintl.c
+	HEADERS = libintl.h
+endif
 PROGSRC = $(sort $(wildcard src/*.c))
 
 PARSEROBJS = src/poparser.o src/StringEscape.o
@@ -13,11 +22,10 @@ PROGOBJS = $(PROGSRC:.c=.o)
 LIBOBJS = $(LIBSRC:.c=.o)
 OBJS = $(PROGOBJS) $(LIBOBJS)
 
-
-HEADERS = libintl.h
 ALL_INCLUDES = $(HEADERS)
-
+ifneq ($(LIBINTL), NONE)
 ALL_LIBS=libintl.a
+endif
 ALL_TOOLS=msgfmt msgmerge xgettext autopoint
 ALL_M4S=$(sort $(wildcard m4/*.m4))
 
