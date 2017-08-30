@@ -3,7 +3,7 @@ bindir=$(prefix)/bin
 includedir=$(prefix)/include
 libdir=$(prefix)/lib
 sysconfdir=$(prefix)/etc
-m4dir=$(prefix)/share/gettext-tiny
+datadir=$(prefix)/share/gettext-tiny
 
 ifeq ($(LIBINTL), MUSL)
 	LIBSRC = libintl/libintl-musl.c
@@ -28,6 +28,7 @@ ALL_LIBS=libintl.a
 endif
 ALL_TOOLS=msgfmt msgmerge xgettext autopoint
 ALL_M4S=$(sort $(wildcard m4/*.m4))
+ALL_DATA=$(sort $(wildcard data/*))
 
 CFLAGS=-O0 -fPIC
 
@@ -41,7 +42,7 @@ BUILDCFLAGS=$(CFLAGS)
 
 all: $(ALL_LIBS) $(ALL_TOOLS)
 
-install: $(ALL_LIBS:lib%=$(DESTDIR)$(libdir)/lib%) $(ALL_INCLUDES:%=$(DESTDIR)$(includedir)/%) $(ALL_TOOLS:%=$(DESTDIR)$(bindir)/%) $(ALL_M4S:%=$(DESTDIR)$(m4dir)/%)
+install: $(ALL_LIBS:lib%=$(DESTDIR)$(libdir)/lib%) $(ALL_INCLUDES:%=$(DESTDIR)$(includedir)/%) $(ALL_TOOLS:%=$(DESTDIR)$(bindir)/%) $(ALL_M4S:%=$(DESTDIR)$(datadir)/%) $(ALL_DATA:%=$(DESTDIR)$(datadir)/%)
 
 clean:
 	rm -f $(ALL_LIBS)
@@ -66,7 +67,7 @@ xgettext:
 	cp src/xgettext.sh ./xgettext
 
 autopoint: src/autopoint.in
-	cat $< | sed 's,@m4dir@,$(m4dir),' > $@
+	cat $< | sed 's,@datadir@,$(datadir),' > $@
 
 $(DESTDIR)$(libdir)/%.a: %.a
 	install -D -m 755 $< $@
@@ -77,7 +78,7 @@ $(DESTDIR)$(includedir)/%.h: include/%.h
 $(DESTDIR)$(bindir)/%: %
 	install -D -m 755 $< $@
 
-$(DESTDIR)$(m4dir)/%: %
+$(DESTDIR)$(datadir)/%: %
 	install -D -m 644 $< $@
 
 .PHONY: all clean install
