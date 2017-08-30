@@ -1,5 +1,5 @@
 #!/bin/sh
-m4src=@m4dir@/m4
+m4src=@datadir@/m4
 
 gen_makefile() {
 cat << EOF > "$1"
