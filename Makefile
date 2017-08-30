@@ -28,6 +28,7 @@ ALL_LIBS=libintl.a
 endif
 ALL_TOOLS=msgfmt msgmerge xgettext autopoint
 ALL_M4S=$(sort $(wildcard m4/*.m4))
+ALL_DATA=$(sort $(wildcard data/*))
 
 CFLAGS=-O0 -fPIC
 
@@ -41,7 +42,7 @@ BUILDCFLAGS=$(CFLAGS)
 
 all: $(ALL_LIBS) $(ALL_TOOLS)
 
-install: $(ALL_LIBS:lib%=$(DESTDIR)$(libdir)/lib%) $(ALL_INCLUDES:%=$(DESTDIR)$(includedir)/%) $(ALL_TOOLS:%=$(DESTDIR)$(bindir)/%) $(ALL_M4S:%=$(DESTDIR)$(datadir)/%)
+install: $(ALL_LIBS:lib%=$(DESTDIR)$(libdir)/lib%) $(ALL_INCLUDES:%=$(DESTDIR)$(includedir)/%) $(ALL_TOOLS:%=$(DESTDIR)$(bindir)/%) $(ALL_M4S:%=$(DESTDIR)$(datadir)/%) $(ALL_DATA:%=$(DESTDIR)$(datadir)/%)
 
 clean:
 	rm -f $(ALL_LIBS)

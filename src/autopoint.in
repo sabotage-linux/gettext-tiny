@@ -1,17 +1,6 @@
 #!/bin/sh
 m4src=@datadir@/m4
 
-gen_makefile() {
-cat << EOF > "$1"
-all:
-clean:
-dist:
-distclean:
-install:
-.PHONY: all clean dist distclean install
-EOF
-}
-
 mkdir -p m4 intl po
 for i in $m4src/*.m4 ; do
 	cp $i m4/
@@ -20,6 +9,6 @@ done
 touch config.rpath ABOUT-NLS
 
 for i in intl/Makefile.in po/Makefile.in.in ; do
-	[ -e "$i" ] && touch "$i" || gen_makefile "$i"
+	[ -e "$i" ] || install -D -m 644  @datadir@/data/autopoint_Makefile.in "$i"
 done
 true
