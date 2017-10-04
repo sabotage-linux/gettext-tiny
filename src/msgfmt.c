@@ -248,7 +248,10 @@ static inline void writemsg(struct callbackdata *d) {
 
 static inline void writestr(struct callbackdata *d, struct po_info *info) {
 	// msgid xx; msgstr ""; is widely happened, it's invalid
-	if(!d->pluralstr_count) {
+
+	// https://github.com/sabotage-linux/gettext-tiny/issues/1
+	// no invalid, when empty, check d->num[pe_msgid]
+	if(!d->pluralstr_count && d->num[pe_msgid] > 0) {
 		d->len[pe_msgid]-=d->msgidbuf1_len;
 		d->len[pe_msgid]-=d->msgidbuf2_len;
 		d->len[pe_plural]-=d->pluralbuf1_len;
