@@ -36,18 +36,34 @@ struct fiLes {
 	FILE *po;
 	FILE *pot;
 	FILE *compend;
+	int plural_count;
+	enum po_entry prev_type;
 };
 
 /* currently we only output input strings as output strings
  * i.e. there is no translation lookup at all */
 int process_line_callback(struct po_info* info, void* user) {
-	char convbuf[8192];
-	FILE* out = (FILE*) user;
-	size_t l;
-	if(info->type == pe_msgid) {
-		l = escape(info->text, convbuf, sizeof(convbuf));
-		(void) l;
-		fprintf(out, "msgid \"%s\"\nmsgstr \"%s\"\n", convbuf, convbuf);
+	struct fiLes* file = (struct fiLes*) user;
+	switch (info->type) {
+	case pe_msgid:
+		file->plural_count = 1;
+		fprintf(file->out, "\nmsgid \"%s\"\n", info->text);
+		file->prev_type = info->type;
+		break;
+	case pe_ctxt:
+		fprintf(file->out, "msgctxt \"%s\"\n", info->text);
+		break;
+	case pe_plural:
+		fprintf(file->out, "msgid_plural \"%s\"\n", info->text);
+		file->prev_type = info->type;
+		break;
+	case pe_msgstr:
+		if (file->prev_type == pe_plural) {
+			fprintf(file->out, "msgstr[%d] \"%s\"\n", file->plural_count++, info->text);
+		} else {
+			fprintf(file->out, "msgstr \"%s\"\n", info->text);
+		}
+		break;
 	}
 	return 0;
 }
@@ -56,9 +72,9 @@ int process(struct fiLes *files, int update, int backup) {
 	(void) update; (void) backup;
 	struct po_parser pb, *p = &pb;
 	char line[4096], conv[8192], *lb;
-	poparser_init(p, conv, sizeof(conv), process_line_callback, files->out);
-	while((lb = fgets(line, sizeof(line), files->pot))) {
-		poparser_feed_line(p, lb, sizeof(line) - (size_t)(lb - line));
+	poparser_init(p, conv, sizeof(conv), process_line_callback, files);
+	while((lb = fgets(line, sizeof(line), files->po))) {
+		poparser_feed_line(p, lb, sizeof(line));
 	}
 	poparser_finish(p);
 	return 0;
@@ -102,7 +118,7 @@ int main(int argc, char**argv) {
 		.pot = 0,
 		.compend = 0,
 	};
-	struct fiLes files = {0,0,0,0};
+	struct fiLes files = {0,0,0,0,1,0};
 	char* backup_suffix = getenv("SIMPLE_BACKUP_SUFFIX");
 	if(!backup_suffix) backup_suffix = "~";
 	int update = 0;
@@ -209,7 +225,6 @@ int main(int argc, char**argv) {
 	}
 	if(update) {
 		fprintf(stdout, "error: update functionality unimplemented\n");
-		exit(update);
 	}
 	if(!files.out || !files.po || !files.pot) syntax();
 	int ret = process(&files, update, backup);
