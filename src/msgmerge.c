@@ -224,7 +224,7 @@ int main(int argc, char**argv) {
 		}
 	}
 	if(update) {
-		fprintf(stdout, "error: update functionality unimplemented\n");
+		fprintf(stdout, "warning: update functionality unimplemented\n");
 	}
 	if(!files.out || !files.po || !files.pot) syntax();
 	int ret = process(&files, update, backup);
