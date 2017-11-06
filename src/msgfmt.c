@@ -507,7 +507,8 @@ int main(int argc, char**argv) {
 	int expect_out_fn = 0;
 	int expect_in_fn = 1;
 	int statistics = 0;
-	char* dest;
+	char* locale = NULL;
+	char* dest = NULL;
 #define A argv[arg]
 	for(; arg < argc; arg++) {
 		if(expect_out_fn) {
@@ -536,10 +537,10 @@ int main(int argc, char**argv) {
 					streq(A+2, "no-hash") ||
 					streq(A+2, "verbose") ||
 					strstarts(A+2, "check-accelerators=") ||
-					strstarts(A+2, "resource=") ||
-					strstarts(A+2, "locale=")
-
+					strstarts(A+2, "resource=")
 				) {
+				} else if((dest = strstarts(A+2, "locale="))) {
+					locale = dest;
 				} else if((dest = strstarts(A+2, "output-file="))) {
 					set_file(1, dest, &out);
 				} else if(streq(A+2, "statistics")) {
@@ -553,7 +554,6 @@ int main(int argc, char**argv) {
 			} else if(
 				streq(A+1, "j") ||
 				streq(A+1, "r") ||
-				streq(A+1, "l") ||
 				streq(A+1, "P") ||
 				streq(A+1, "f") ||
 				streq(A+1, "a") ||
@@ -563,21 +563,35 @@ int main(int argc, char**argv) {
 			) {
 			} else if (streq(A+1, "V")) {
 				version();
-			} else if (streq(A+1, "d")) {
-				// no support for -d at this time
-				fprintf(stderr, "EINVAL\n");
-				exit(1);
 			} else if (streq(A+1, "h")) {
 				syntax();
 			} else if (expect_in_fn) {
 				set_file(0, A, &in);
 				expect_in_fn = 0;
+			} else if (streq(A+1, "l")) {
+				arg++;
+				locale = A;
+			} else if (streq(A+1, "d")) {
+				arg++;
+				dest = A;
 			}
 		} else if (expect_in_fn) {
 			set_file(0, A, &in);
 			expect_in_fn = 0;
 		}
 	}
+
+	if (locale != NULL && dest != NULL) {
+		int sz = snprintf(NULL, 0, "%s/%s.msg", dest, locale);
+		char msg[sz+1];
+		snprintf(msg, sizeof(msg), "%s/%s.msg", dest, locale);
+		FILE *fp = fopen(msg, "w");
+		if (fp) {
+			fclose(fp);
+			return 0;
+		} else return 1;
+	}
+
 	if(in == NULL || out == NULL) {
 		if(!statistics) syntax();
 		else return 0;
