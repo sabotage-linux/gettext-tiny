@@ -505,7 +505,6 @@ int main(int argc, char**argv) {
 	FILE *out = NULL;
 	FILE *in = NULL;
 	int expect_in_fn = 1;
-	int statistics = 0;
 	char* locale = NULL;
 	char* dest = NULL;
 #define A argv[arg]
@@ -532,6 +531,7 @@ int main(int argc, char**argv) {
 					streq(A+2, "check-accelerators") ||
 					streq(A+2, "no-hash") ||
 					streq(A+2, "verbose") ||
+					streq(A+2, "statistics") ||
 					strstarts(A+2, "check-accelerators=") ||
 					strstarts(A+2, "resource=")
 				) {
@@ -539,8 +539,6 @@ int main(int argc, char**argv) {
 					locale = dest;
 				} else if((dest = strstarts(A+2, "output-file="))) {
 					set_file(1, dest, &out);
-				} else if(streq(A+2, "statistics")) {
-					statistics = 1;
 				} else if(streq(A+2, "version")) {
 					version();
 				} else if (expect_in_fn) {
@@ -592,9 +590,12 @@ int main(int argc, char**argv) {
 		} else return 1;
 	}
 
+	if(out == NULL) {
+		set_file(1, "messages.mo", &out);
+	}
+
 	if(in == NULL || out == NULL) {
-		if(!statistics) syntax();
-		else return 0;
+		return 1;
 	}
 	int ret = process(in, out);
 	fflush(in); fflush(out);
