@@ -504,17 +504,13 @@ int main(int argc, char**argv) {
 	int arg = 1;
 	FILE *out = NULL;
 	FILE *in = NULL;
-	int expect_out_fn = 0;
 	int expect_in_fn = 1;
 	int statistics = 0;
 	char* locale = NULL;
 	char* dest = NULL;
 #define A argv[arg]
 	for(; arg < argc; arg++) {
-		if(expect_out_fn) {
-			set_file(1, A, &out);
-			expect_out_fn = 0;
-		} else if(A[0] == '-') {
+		if(A[0] == '-') {
 			if(A[1] == '-') {
 				if(
 					streq(A+2, "java") ||
@@ -547,10 +543,14 @@ int main(int argc, char**argv) {
 					statistics = 1;
 				} else if(streq(A+2, "version")) {
 					version();
+				} else if (expect_in_fn) {
+					set_file(0, A, &in);
+					expect_in_fn = 0;
 				} else if(streq(A+2, "help")) syntax();
 
 			} else if(streq(A + 1, "o")) {
-				expect_out_fn = 1;
+				arg++;
+				set_file(1, A, &out);
 			} else if(
 				streq(A+1, "j") ||
 				streq(A+1, "r") ||
