@@ -406,6 +406,11 @@ int process(FILE *in, FILE *out) {
 	for(d.pass = pass_first; d.pass <= pass_second; d.pass++) {
 		if(d.pass == pass_second) {
 			// start of second pass:
+			// ensure we dont output when there's no strings at all
+			if(d.num[pe_msgid] == 0) {
+				return 1;
+			}
+
 			// check that data gathered in first pass is consistent
 			if((d.num[pe_msgstr] < d.num[pe_msgid]) || (d.num[pe_msgstr] > (d.num[pe_msgid] + d.num[pe_plural] * (p->info.nplurals - 1)))) {
 				// one should actually abort here,
@@ -548,6 +553,7 @@ int main(int argc, char**argv) {
 
 			} else if(streq(A + 1, "o")) {
 				arg++;
+				dest = A;
 				set_file(1, A, &out);
 			} else if(
 				streq(A+1, "j") ||
@@ -591,6 +597,7 @@ int main(int argc, char**argv) {
 	}
 
 	if(out == NULL) {
+		dest = "messages.mo";
 		set_file(1, "messages.mo", &out);
 	}
 
@@ -601,5 +608,9 @@ int main(int argc, char**argv) {
 	fflush(in); fflush(out);
 	if(in != stdin) fclose(in);
 	if(out != stdout) fclose(out);
+
+	if (ret == 1) {
+		return remove(dest);
+	}
 	return ret;
 }
