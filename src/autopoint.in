@@ -3,12 +3,12 @@ m4src=@datadir@/m4
 
 mkdir -p m4 intl po
 for i in $m4src/*.m4 ; do
-	cp $i m4/
+	cp -f $i m4/
 done
 
 touch config.rpath ABOUT-NLS
 
 for i in intl/Makefile.in po/Makefile.in.in ; do
-	[ -e "$i" ] || install -D -m 644  @datadir@/data/autopoint_Makefile.in "$i"
+	install -D -m 644 @datadir@/data/autopoint_Makefile.in "$i"
 done
 true
