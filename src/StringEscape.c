@@ -93,6 +93,9 @@ size_t unescape(char* in, char *out, size_t outsize) {
 					case '\'':
 						*out = '\'';
 						break;
+					case 'b':
+						*out = '\b';
+						break;
 					// FIXME add handling of hex and octal
 					default:
 						abort();
