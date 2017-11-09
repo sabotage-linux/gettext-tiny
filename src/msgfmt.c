@@ -546,11 +546,12 @@ int main(int argc, char**argv) {
 					set_file(1, dest, &out);
 				} else if(streq(A+2, "version")) {
 					version();
+				} else if(streq(A+2, "help")) {
+					syntax();
 				} else if (expect_in_fn) {
 					set_file(0, A, &in);
 					expect_in_fn = 0;
-				} else if(streq(A+2, "help")) syntax();
-
+				}
 			} else if(streq(A + 1, "o")) {
 				arg++;
 				dest = A;
@@ -569,15 +570,15 @@ int main(int argc, char**argv) {
 				version();
 			} else if (streq(A+1, "h")) {
 				syntax();
-			} else if (expect_in_fn) {
-				set_file(0, A, &in);
-				expect_in_fn = 0;
 			} else if (streq(A+1, "l")) {
 				arg++;
 				locale = A;
 			} else if (streq(A+1, "d")) {
 				arg++;
 				dest = A;
+			} else if (expect_in_fn) {
+				set_file(0, A, &in);
+				expect_in_fn = 0;
 			}
 		} else if (expect_in_fn) {
 			set_file(0, A, &in);
