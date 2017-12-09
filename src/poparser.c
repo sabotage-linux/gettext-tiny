@@ -162,11 +162,11 @@ int poparser_feed_line(struct po_parser *p, char* line, size_t buflen) {
 			[pe_invalid] = la_proc,
 		},
 		[pe_invalid] = {
-			[pe_str] = la_abort,
+			[pe_str] = la_nop,
 			[pe_msgid] = la_incr,
 			[pe_ctxt] = la_incr,
-			[pe_plural] = la_abort,
-			[pe_msgstr] = la_abort,
+			[pe_plural] = la_nop,
+			[pe_msgstr] = la_nop,
 			[pe_invalid] = la_nop,
 		},
 	};
