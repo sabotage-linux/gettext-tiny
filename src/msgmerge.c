@@ -204,7 +204,26 @@ int main(int argc, char**argv) {
 				nodir:
 				fprintf(stderr, "EINVAL\n");
 				exit(1);
-			} else if (streq(A+1, "h")) syntax();
+			} else if (streq(A+1, "h")) {
+				syntax();
+			} else if(expect_fn.out) {
+				if(update && streq(A, "/dev/null")) return 0;
+				set_file(1, A, &files.out);
+				expect_fn.out = 0;
+			} else if(expect_fn.compend) {
+				set_file(1, A, &files.compend);
+				expect_fn.compend = 0;
+			} else if(expect_fn.po) {
+				if(update && streq(A, "/dev/null")) return 0;
+				set_file(0, A, &files.po);
+				expect_fn.po = 0;
+				expect_fn.pot = 1;
+			} else if(expect_fn.pot) {
+				if(update && streq(A, "/dev/null")) return 0;
+				set_file(0, A, &files.pot);
+				expect_fn.pot = 0;
+			}
+
 		} else if(expect_fn.out) {
 			if(update && streq(A, "/dev/null")) return 0;
 			set_file(1, A, &files.out);
