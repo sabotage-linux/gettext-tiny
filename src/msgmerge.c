@@ -40,28 +40,33 @@ struct fiLes {
 	enum po_entry prev_type;
 };
 
+char convbuf[16384];
 /* currently we only output input strings as output strings
  * i.e. there is no translation lookup at all */
 int process_line_callback(struct po_info* info, void* user) {
+	// escape what is unescaped automatically by lib
+	memset(convbuf, 0, sizeof(convbuf));
+	escape(info->text, convbuf, sizeof(convbuf));
+
 	struct fiLes* file = (struct fiLes*) user;
 	switch (info->type) {
 	case pe_msgid:
 		file->plural_count = 1;
-		fprintf(file->out, "\nmsgid \"%s\"\n", info->text);
+		fprintf(file->out, "\nmsgid \"%s\"\n", convbuf);
 		file->prev_type = info->type;
 		break;
 	case pe_ctxt:
-		fprintf(file->out, "msgctxt \"%s\"\n", info->text);
+		fprintf(file->out, "msgctxt \"%s\"\n", convbuf);
 		break;
 	case pe_plural:
-		fprintf(file->out, "msgid_plural \"%s\"\n", info->text);
+		fprintf(file->out, "msgid_plural \"%s\"\n", convbuf);
 		file->prev_type = info->type;
 		break;
 	case pe_msgstr:
 		if (file->prev_type == pe_plural) {
-			fprintf(file->out, "msgstr[%d] \"%s\"\n", file->plural_count++, info->text);
+			fprintf(file->out, "msgstr[%d] \"%s\"\n", file->plural_count++, convbuf);
 		} else {
-			fprintf(file->out, "msgstr \"%s\"\n", info->text);
+			fprintf(file->out, "msgstr \"%s\"\n", convbuf);
 		}
 		break;
 	}
