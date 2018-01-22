@@ -1,5 +1,4 @@
 #!/bin/sh
-
 outputfile=
 outputdir=
 domain=messages
@@ -104,13 +103,6 @@ while true ; do
 done
 
 [ "$outputfile" = "-" ] && exit 0
-if [ -z "$outputfile" ] ; then
-	outputfile=${domain}.po
-	[ -z "$outputdir" ] && outputdir=.
-	touch $outputdir/$outputfile
-else
-	[ -z "$outputdir" ] && touch $outputdir/$outputfile || \
-	touch $outputfile
-fi
-
-
+[ -z "$outputdir" ] && outputdir=.
+[ -z "$outputfile" ] && outputfile=${domain}.po
+touch $outputdir/$outputfile
