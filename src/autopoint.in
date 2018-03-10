@@ -16,9 +16,11 @@ do
   fi
 done < "configure.ac"
 
-touch ./${dirprefix}/config.rpath ./${dirprefix}/ABOUT-NLS
+touch ./${dirprefix}/config.rpath ABOUT-NLS
 
 for i in intl/Makefile.in po/Makefile.in.in ; do
 	install -D -m 644 @datadir@/data/autopoint_Makefile.in "$i"
 done
+
+install -D -m 644 @datadir@/data/Makevars.template po/Makevars.template
 true
