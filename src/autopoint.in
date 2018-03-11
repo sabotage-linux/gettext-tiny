@@ -10,19 +10,19 @@ dirprefix=""
 while read line
 do
   if [ "${line##*AC_CONFIG_AUX_DIR}" != "$line" ]; then
-    dirprefix=${line##*([}
-    dirprefix=${dirprefix%%])*}
-    mkdir -p ${dirprefix}
+    dirprefix="${line##*([}"
+    dirprefix="${dirprefix%%])*}"
+    mkdir -p "${dirprefix}"
   fi
   
   if [ "${line##*po/Makefile.in}" != "$line" ]; then
-    poprefix=${line##*[}
-    poprefix=${poprefix%%po/Makefile.in*}
-    install -D -m 644 @datadir@/data/autopoint_Makefile.in ./${poprefix}/po/Makefile.in.in
+    poprefix="${line##*[}"
+    poprefix="${poprefix%%po/Makefile.in*}"
+    install -D -m 644 @datadir@/data/autopoint_Makefile.in "./${poprefix}/po/Makefile.in.in"
   fi
 done < "configure.ac"
 
-touch ./${dirprefix}/config.rpath ABOUT-NLS
+touch "./${dirprefix}/config.rpath" ABOUT-NLS
 
 for i in intl/Makefile.in po/Makefile.in.in ; do
 	install -D -m 644 @datadir@/data/autopoint_Makefile.in "$i"
