@@ -60,3 +60,15 @@ AC_DEFUN([gt_TYPE_WINT_T],
   fi
   AC_SUBST([GNULIB_OVERRIDES_WINT_T])
 ])
+
+dnl Prerequisites of the 'wint_t' override.
+AC_DEFUN([gl_TYPE_WINT_T_PREREQ],
+[
+  AC_CHECK_HEADERS_ONCE([crtdefs.h])
+  if test $ac_cv_header_crtdefs_h = yes; then
+    HAVE_CRTDEFS_H=1
+  else
+    HAVE_CRTDEFS_H=0
+  fi
+  AC_SUBST([HAVE_CRTDEFS_H])
+])
