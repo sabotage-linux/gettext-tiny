@@ -103,6 +103,10 @@ while true ; do
 done
 
 [ "$outputfile" = "-" ] && exit 0
-[ -z "$outputdir" ] && outputdir=.
 [ -z "$outputfile" ] && outputfile=${domain}.po
-touch $outputdir/$outputfile
+
+if [ -z "$outputdir" ]; then
+	touch $outputfile
+else
+	touch $outputdir/$outputfile
+fi
