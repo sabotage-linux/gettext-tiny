@@ -33,6 +33,7 @@ ALL_M4S=$(sort $(wildcard m4/*.m4))
 ALL_DATA=$(sort $(wildcard data/*))
 
 CFLAGS=-O0 -fPIC
+LDLIBS=-liconv
 
 AR      ?= $(CROSS_COMPILE)ar
 RANLIB  ?= $(CROSS_COMPILE)ranlib
@@ -62,10 +63,10 @@ libintl.a: $(LIBOBJS)
 	$(RANLIB) $@
 
 msgmerge: $(OBJS)
-	$(CC) $(LDFLAGS) -static -o $@ src/msgmerge.o $(PARSEROBJS)
+	$(CC) $(LDFLAGS) -static -o $@ src/msgmerge.o $(PARSEROBJS) $(LDLIBS)
 
 msgfmt: $(OBJS)
-	$(CC) $(LDFLAGS) -static -o $@ src/msgfmt.o $(PARSEROBJS)
+	$(CC) $(LDFLAGS) -static -o $@ src/msgfmt.o $(PARSEROBJS) $(LDLIBS)
 
 xgettext:
 	cp src/xgettext.sh ./xgettext
