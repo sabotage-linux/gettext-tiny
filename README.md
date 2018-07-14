@@ -39,7 +39,7 @@ additionally, it can be entirely disabled.
 
 ```
 make LIBINTL=FLAVOR
-make DESTDIR=pkgdir prefix=/ install
+make LIBINTL=FLAVOR DESTDIR=pkgdir prefix=/ install
 ```
 
 where FLAVOR can be one of NONE, MUSL, NOOP (as detailed above).
