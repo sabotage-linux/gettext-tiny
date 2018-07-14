@@ -3,7 +3,9 @@ bindir=$(prefix)/bin
 includedir=$(prefix)/include
 libdir=$(prefix)/lib
 sysconfdir=$(prefix)/etc
-datadir=$(prefix)/share/gettext-tiny
+datarootdir=$(prefix)/share
+datadir=$(datarootdir)/gettext-tiny
+acdir=$(datarootdir)/aclocal
 
 ifeq ($(LIBINTL), MUSL)
 	LIBSRC = libintl/libintl-musl.c
@@ -36,13 +38,15 @@ AR      ?= $(CROSS_COMPILE)ar
 RANLIB  ?= $(CROSS_COMPILE)ranlib
 CC      ?= $(CROSS_COMPILE)cc
 
+INSTALL ?= ./install.sh
+
 -include config.mak
 
 BUILDCFLAGS=$(CFLAGS)
 
 all: $(ALL_LIBS) $(ALL_TOOLS)
 
-install: $(ALL_LIBS:lib%=$(DESTDIR)$(libdir)/lib%) $(ALL_INCLUDES:%=$(DESTDIR)$(includedir)/%) $(ALL_TOOLS:%=$(DESTDIR)$(bindir)/%) $(ALL_M4S:%=$(DESTDIR)$(datadir)/%) $(ALL_DATA:%=$(DESTDIR)$(datadir)/%)
+install: $(ALL_LIBS:lib%=$(DESTDIR)$(libdir)/lib%) $(ALL_INCLUDES:%=$(DESTDIR)$(includedir)/%) $(ALL_TOOLS:%=$(DESTDIR)$(bindir)/%) $(ALL_M4S:%=$(DESTDIR)$(datadir)/%) $(ALL_M4S:%=$(DESTDIR)$(acdir)/%) $(ALL_DATA:%=$(DESTDIR)$(datadir)/%)
 
 clean:
 	rm -f $(ALL_LIBS)
@@ -70,18 +74,18 @@ autopoint: src/autopoint.in
 	cat $< | sed 's,@datadir@,$(datadir),' > $@
 
 $(DESTDIR)$(libdir)/%.a: %.a
-	install -D -m 755 $< $@
+	$(INSTALL) -D -m 755 $< $@
 
 $(DESTDIR)$(includedir)/%.h: include/%.h
-	install -D -m 644 $< $@
+	$(INSTALL) -D -m 644 $< $@
 
 $(DESTDIR)$(bindir)/%: %
-	install -D -m 755 $< $@
+	$(INSTALL) -D -m 755 $< $@
 
 $(DESTDIR)$(datadir)/%: %
-	install -D -m 644 $< $@
+	$(INSTALL) -D -m 644 $< $@
+
+$(DESTDIR)$(acdir)/%: %
+	$(INSTALL) -D -l ../$(subst $(datarootdir)/,,$(datadir))/$< $(subst m4/,,$@)
 
 .PHONY: all clean install
-
-
-
