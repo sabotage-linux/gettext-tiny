@@ -42,6 +42,8 @@ INSTALL ?= ./install.sh
 
 -include config.mak
 
+LDLIBS:=$(shell echo "int main(){}" | $(CC) -liconv -x c - >/dev/null 2>&1 && printf %s -liconv)
+
 BUILDCFLAGS=$(CFLAGS)
 
 all: $(ALL_LIBS) $(ALL_TOOLS)
@@ -62,10 +64,10 @@ libintl.a: $(LIBOBJS)
 	$(RANLIB) $@
 
 msgmerge: $(OBJS)
-	$(CC) -static -o $@ src/msgmerge.o $(PARSEROBJS) $(LDFLAGS)
+	$(CC) -static -o $@ src/msgmerge.o $(PARSEROBJS) $(LDFLAGS) $(LDLIBS)
 
 msgfmt: $(OBJS)
-	$(CC) -static -o $@ src/msgfmt.o $(PARSEROBJS) $(LDFLAGS)
+	$(CC) -static -o $@ src/msgfmt.o $(PARSEROBJS) $(LDFLAGS) $(LDLIBS)
 
 xgettext:
 	cp src/xgettext.sh ./xgettext
