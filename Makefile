@@ -64,10 +64,10 @@ libintl.a: $(LIBOBJS)
 	$(RANLIB) $@
 
 msgmerge: $(OBJS)
-	$(CC) -static -o $@ src/msgmerge.o $(PARSEROBJS) $(LDFLAGS) $(LDLIBS)
+	$(CC) -o $@ src/msgmerge.o $(PARSEROBJS) $(LDFLAGS) $(LDLIBS)
 
 msgfmt: $(OBJS)
-	$(CC) -static -o $@ src/msgfmt.o $(PARSEROBJS) $(LDFLAGS) $(LDLIBS)
+	$(CC) -o $@ src/msgfmt.o $(PARSEROBJS) $(LDFLAGS) $(LDLIBS)
 
 xgettext:
 	cp src/xgettext.sh ./xgettext
