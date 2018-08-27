@@ -21,7 +21,7 @@ static void syntax(void) {
 __attribute__((noreturn))
 static void version(void) {
 	fprintf(stdout,
-		"these are not (GNU gettext-tools) 99.9999.9999\n");
+		"msgfmt (GNU gettext-tools compatible) 99.9999.9999\n");
 	exit(0);
 }
 
