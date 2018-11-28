@@ -36,37 +36,58 @@ struct fiLes {
 	FILE *po;
 	FILE *pot;
 	FILE *compend;
-	int plural_count;
-	enum po_entry prev_type;
+
+	// the biggest length of a string
+	enum po_stage stage;
+	size_t len;
+	char *buf;
 };
 
 /* currently we only output input strings as output strings
  * i.e. there is no translation lookup at all */
-int process_line_callback(struct po_info* info, void* user) {
-	char convbuf[16384];
+int process_line_callback(po_message_t msg, void* user) {
 	struct fiLes* file = (struct fiLes*) user;
+	int i;
+	switch (file->stage) {
+	case ps_size:
+		if (msg->ctxt_len > file->len)
+			file->len = msg->ctxt_len + 1;
 
-	// escape what is unescaped automatically by lib
-	escape(info->text, convbuf, sizeof(convbuf));
-	switch (info->type) {
-	case pe_msgid:
-		file->plural_count = 1;
-		fprintf(file->out, "\nmsgid \"%s\"\n", convbuf);
-		file->prev_type = info->type;
+		if (msg->id_len > file->len)
+			file->len = msg->id_len + 1;
+
+		if (msg->plural_len > file->len)
+			file->len = msg->plural_len + 1;
+
+		for (i=0; i < MAX_NPLURALS; i++)
+			if (msg->strlen[i] > file->len)
+				file->len = msg->strlen[i] + 1;
+
 		break;
-	case pe_ctxt:
-		fprintf(file->out, "msgctxt \"%s\"\n", convbuf);
-		break;
-	case pe_plural:
-		fprintf(file->out, "msgid_plural \"%s\"\n", convbuf);
-		file->prev_type = info->type;
-		break;
-	case pe_msgstr:
-		if (file->prev_type == pe_plural) {
-			fprintf(file->out, "msgstr[%d] \"%s\"\n", file->plural_count++, convbuf);
-		} else {
-			fprintf(file->out, "msgstr \"%s\"\n", convbuf);
+	case ps_parse:
+		if (msg->ctxt_len) {
+			escape(msg->ctxt, file->buf, file->len);
+			fprintf(file->out, "msgctxt \"%s\"\n", file->buf);
 		}
+
+		escape(msg->id, file->buf, file->len);
+		fprintf(file->out, "msgid \"%s\"\n", file->buf);
+
+		if (msg->plural_len) {
+			escape(msg->plural, file->buf, file->len);
+			fprintf(file->out, "msgid_plural \"%s\"\n", file->buf);
+		}
+
+		if (msg->plural_len) {
+			for (i=0; i < MAX_NPLURALS && msg->strlen[i]; i++) {
+				escape(msg->str[i], file->buf, file->len);
+				fprintf(file->out, "msgstr[%d] \"%s\"\n", i, file->buf);
+			}
+		} else {
+			escape(msg->str[0], file->buf, file->len);
+			fprintf(file->out, "msgstr \"%s\"\n", file->buf);
+		}
+
 		break;
 	}
 	return 0;
@@ -74,13 +95,35 @@ int process_line_callback(struct po_info* info, void* user) {
 
 int process(struct fiLes *files, int update, int backup) {
 	(void) update; (void) backup;
+	enum po_error t;
 	struct po_parser pb, *p = &pb;
 	char line[4096], conv[8192], *lb;
+
+	files->stage = ps_size;
 	poparser_init(p, conv, sizeof(conv), process_line_callback, files);
 	while((lb = fgets(line, sizeof(line), files->po))) {
-		poparser_feed_line(p, lb, sizeof(line));
+		if ((t = poparser_feed_line(p, lb, strlen(line))) != po_success)
+			return t;
 	}
-	poparser_finish(p);
+	if ((t = poparser_finish(p)) != po_success)
+		free(files->buf);
+
+	files->stage = ps_parse;
+	files->buf = (char*)malloc(files->len);
+	fseek(files->po, 0, SEEK_SET);
+
+	while((lb = fgets(line, sizeof(line), files->po))) {
+		if ((t = poparser_feed_line(p, lb, strlen(line))) != po_success) {
+			free(files->buf);
+			return t;
+		}
+	}
+	if ((t = poparser_finish(p)) != po_success) {
+		free(files->buf);
+		return t;
+	}
+
+	free(files->buf);
 	return 0;
 }
 
