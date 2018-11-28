@@ -1,4 +1,6 @@
 #include <stddef.h>
+#include <assert.h>
+#include <stdlib.h>
 
 //FIXME out gets silently truncated if outsize is too small
 
@@ -56,11 +58,10 @@ size_t escape(char* in, char* out, size_t outsize) {
 	*out = 0;
 	return l;
 }
-#include <assert.h>
-#include <stdlib.h>
+
 size_t unescape(char* in, char *out, size_t outsize) {
 	size_t l = 0;
-	while(*in && l + 2 < outsize) {
+	while(*in && l + 1 < outsize) {
 		switch (*in) {
 			case '\\':
 				++in;
@@ -114,4 +115,3 @@ size_t unescape(char* in, char *out, size_t outsize) {
 	*out = 0;
 	return l;
 }
-
