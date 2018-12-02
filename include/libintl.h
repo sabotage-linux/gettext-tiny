@@ -1,6 +1,9 @@
 #ifndef LIBINTL_H
 #define LIBINTL_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 char *gettext(const char *msgid);
 char *dgettext(const char *domainname, const char *msgid);
 char *dcgettext(const char *domainname, const char *msgid, int category);
@@ -11,6 +14,9 @@ char *dcngettext(const char *domainname, const char *msgid1, const char *msgid2,
 char *textdomain(const char *domainname);
 char *bind_textdomain_codeset(const char *domainname, const char *codeset);
 char *bindtextdomain(const char *domainname, const char *dirname);
+#ifdef __cplusplus
+}
+#endif
 
 #undef gettext_noop
 #define gettext_noop(X) X
