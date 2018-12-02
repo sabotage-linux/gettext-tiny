@@ -21,14 +21,14 @@ char *bindtextdomain(const char *domainname, const char *dirname);
 #undef gettext_noop
 #define gettext_noop(X) X
 
-#ifndef LIBINTL_NO_MACROS
+#ifdef LIBINTL_NOP_MACROS
 /* if these macros are defined, configure checks will detect libintl as
  * built into the libc because test programs will work without -lintl.
  * for example:
  * checking for ngettext in libc ... yes
  * the consequence is that -lintl will not be added to the LDFLAGS.
- * so if for some reason you want that libintl.a gets linked,
- * add -DLIBINTL_NO_MACROS=1 to your CPPFLAGS. */
+ * so if for some reason you do not want that libintl.a gets linked,
+ * add -DLIBINTL_NOP_MACROS=1 to your CPPFLAGS. */
 
 #define gettext(X) ((char*) (X))
 #define dgettext(dom, X) ((void)(dom), (char*) (X))
