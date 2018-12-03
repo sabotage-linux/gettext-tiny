@@ -100,6 +100,7 @@ int process(struct fiLes *files, int update, int backup) {
 	char line[8192], conv[32768], *lb;
 
 	files->stage = ps_size;
+	files->len = 0;
 	poparser_init(p, conv, sizeof(conv), process_line_callback, files);
 	while((lb = fgets(line, sizeof(line), files->po))) {
 		if ((t = poparser_feed_line(p, lb, strlen(line))) != po_success)
@@ -109,6 +110,7 @@ int process(struct fiLes *files, int update, int backup) {
 		free(files->buf);
 
 	files->stage = ps_parse;
+	files->len *= 2;
 	files->buf = (char*)malloc(files->len);
 	fseek(files->po, 0, SEEK_SET);
 
