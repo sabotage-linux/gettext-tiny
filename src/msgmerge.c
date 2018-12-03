@@ -97,7 +97,7 @@ int process(struct fiLes *files, int update, int backup) {
 	(void) update; (void) backup;
 	enum po_error t;
 	struct po_parser pb, *p = &pb;
-	char line[4096], conv[8192], *lb;
+	char line[8192], conv[32768], *lb;
 
 	files->stage = ps_size;
 	poparser_init(p, conv, sizeof(conv), process_line_callback, files);
