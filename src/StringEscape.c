@@ -36,17 +36,27 @@ size_t escape(char* in, char* out, size_t outsize) {
 			case '\v':
 				*out++ = '\\';
 				l++;
-				*out = '\v';
+				*out = 'v';
 				break;
 			case '\?':
 				*out++ = '\\';
 				l++;
-				*out = '\?';
+				*out = '?';
 				break;
 			case '\f':
 				*out++ = '\\';
 				l++;
-				*out = '\f';
+				*out = 'f';
+				break;
+			case '\b':
+				*out++ = '\\';
+				l++;
+				*out = 'b';
+				break;
+			case '\a':
+				*out++ = '\\';
+				l++;
+				*out = 'a';
 				break;
 			default:
 				*out = *in;
@@ -85,7 +95,7 @@ size_t unescape(char* in, char *out, size_t outsize) {
 					case 'v':
 						*out='\v';
 						break;
-					case '\?':
+					case '?':
 						*out = '\?';
 						break;
 					case 'f':
