@@ -77,24 +77,10 @@ int process_line_callback(po_message_t msg, void* user) {
 	struct callbackdata *d = (struct callbackdata *) user;
 	struct strtbl *str, *trans;
 	size_t m;
-	int i, j, k;
+	int i, j, k = msg->sysdep;
 
 	if (msg->flags & PO_FUZZY) return 0;
 	if (msg->strlen[0] == 0) return 0;
-
-	// PO_SYSDEP_PRIUMAX == 0, it has no effects to our codes
-	switch (msg->sysdep_flag) {
-	case PO_SYSDEP_PRIU32:
-	case PO_SYSDEP_PRIU64:
-		k = 2;
-		break;
-	case PO_SYSDEP_PRIU32|PO_SYSDEP_PRIU64:
-		k = 3;
-		break;
-	default:
-		k = 1;
-		break;
-	}
 
 	switch(d->stage) {
 	case ps_size:

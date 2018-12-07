@@ -7,6 +7,11 @@
 
 #define strstarts(S, W) (memcmp(S, W, sizeof(W) - 1) ? NULL : (S + (sizeof(W) - 1)))
 
+#define PO_SYSDEP_PRIU32 (1 << st_priu32)
+#define PO_SYSDEP_PRIU64 (1 << st_priu64)
+// for complement, no usage
+#define PO_SYSDEP_PRIUMAX 0
+
 static const char* sysdep_str[st_max]={
 	[st_priu32] = "<PRIu32>",
 	[st_priu64] = "<PRIu64>",
@@ -19,7 +24,7 @@ static const char* sysdep_repl[st_max][3]={
 	[st_priumax]  = {"ju", "ju", "ju"},
 };
 
-static const int sysdep_flag[st_max]={
+static const int sysdep[st_max]={
 	[st_priu32]  = PO_SYSDEP_PRIU32,
 	[st_priu64]  = PO_SYSDEP_PRIU64,
 	[st_priumax]  = PO_SYSDEP_PRIUMAX,
@@ -80,11 +85,25 @@ static inline enum po_error poparser_clean(struct po_parser *p, po_message_t msg
 			return t;
 		}
 
+		// PO_SYSDEP_PRIUMAX == 0, it has no effects to our codes
+		switch (msg->sysdep) {
+		case PO_SYSDEP_PRIU32:
+		case PO_SYSDEP_PRIU64:
+			msg->sysdep = 2;
+			break;
+		case PO_SYSDEP_PRIU32|PO_SYSDEP_PRIU64:
+			msg->sysdep = 3;
+			break;
+		default:
+			msg->sysdep = 1;
+			break;
+		}
+
 		// met a new block starting with msgid
 		if (p->cb)
 			p->cb(msg, p->cbdata);
 
-		msg->sysdep_flag = 0;
+		msg->sysdep = 0;
 		msg->ctxt_len = 0;
 		msg->id_len = 0;
 		msg->plural_len = 0;
@@ -147,7 +166,7 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 
 		for (cnt = 0; cnt < st_max; cnt++) {
 			if (strstr(x, sysdep_str[cnt])) {
-				msg->sysdep_flag |= sysdep_flag[cnt];
+				msg->sysdep |= sysdep[cnt];
 			}
 		}
 
@@ -214,7 +233,7 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 
 			for (cnt = 0; cnt < st_max; cnt++) {
 				if (strstr(x, sysdep_str[cnt])) {
-					msg->sysdep_flag |= sysdep_flag[cnt];
+					msg->sysdep |= sysdep[cnt];
 				}
 			}
 
@@ -237,7 +256,7 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 
 			for (cnt = 0; cnt < st_max; cnt++) {
 				if (strstr(x, sysdep_str[cnt])) {
-					msg->sysdep_flag |= sysdep_flag[cnt];
+					msg->sysdep |= sysdep[cnt];
 				}
 			}
 
