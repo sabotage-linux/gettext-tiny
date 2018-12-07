@@ -361,13 +361,14 @@ size_t poparser_sysdep(const char *in, char *out, int cnt[]) {
 
 	while ((y = strchr(x, '%'))) {
 		y++;
+		if (outs)
+			memcpy(out, x, y-x);
+		out += y-x;
+		x = y;
 
 		for (n=0; n < st_max; n++) {
 			m = strlen(sysdep_str[n]);
 			if (!strncmp(y, sysdep_str[n], m)) {
-				if (outs)
-					memcpy(out, x, y-x);
-				out += y-x;
 				x = y + m;
 
 				y = sysdep_repl[n][cnt[n]+1];
