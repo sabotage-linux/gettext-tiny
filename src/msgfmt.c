@@ -135,6 +135,8 @@ int process_line_callback(po_message_t msg, void* user) {
 				trans->len += m;
 				d->len[1] += m;
 			}
+
+			d->cnt++;
 		}
 
 		break;
