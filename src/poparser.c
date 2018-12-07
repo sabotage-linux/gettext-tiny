@@ -14,9 +14,15 @@ static const char* sysdep_str[st_max]={
 };
 
 static const char* sysdep_repl[st_max][3]={
-	[st_priu32]  = {"\x2", "u", "lu"},
-	[st_priu64]  = {"\x2", "lu", "llu"},
-	[st_priumax]  = {"\x1", "ju"},
+	[st_priu32]  = {"u", "lu", "u"},
+	[st_priu64]  = {"lu", "llu", "llu"},
+	[st_priumax]  = {"ju", "ju", "ju"},
+};
+
+static const int sysdep_flag[st_max]={
+	[st_priu32]  = PO_SYSDEP_PRIU32,
+	[st_priu64]  = PO_SYSDEP_PRIU64,
+	[st_priumax]  = PO_SYSDEP_PRIUMAX,
 };
 
 void poparser_init(struct po_parser *p, char* workbuf, size_t bufsize, poparser_callback cb, void* cbdata) {
@@ -66,7 +72,6 @@ static inline enum po_error poparser_feed_hdr(struct po_parser *p, po_message_t 
 
 static inline enum po_error poparser_clean(struct po_parser *p, po_message_t msg) {
 	enum po_error t;
-	int i;
 
 	if (p->strcnt) {
 		msg->strlen[p->strcnt] = 0;
@@ -79,9 +84,7 @@ static inline enum po_error poparser_clean(struct po_parser *p, po_message_t msg
 		if (p->cb)
 			p->cb(msg, p->cbdata);
 
-		for (i=0; i < st_max; i++)
-			msg->sysdep[i] = 0;
-
+		msg->sysdep_flag = 0;
 		msg->ctxt_len = 0;
 		msg->id_len = 0;
 		msg->plural_len = 0;
@@ -144,7 +147,7 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 
 		for (cnt = 0; cnt < st_max; cnt++) {
 			if (strstr(x, sysdep_str[cnt])) {
-				msg->sysdep[cnt] = sysdep_repl[cnt][0][0];
+				msg->sysdep_flag |= sysdep_flag[cnt];
 			}
 		}
 
@@ -211,7 +214,7 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 
 			for (cnt = 0; cnt < st_max; cnt++) {
 				if (strstr(x, sysdep_str[cnt])) {
-					msg->sysdep[cnt] = sysdep_repl[cnt][0][0];
+					msg->sysdep_flag |= sysdep_flag[cnt];
 				}
 			}
 
@@ -234,7 +237,7 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 
 			for (cnt = 0; cnt < st_max; cnt++) {
 				if (strstr(x, sysdep_str[cnt])) {
-					msg->sysdep[cnt] = sysdep_repl[cnt][0][0];
+					msg->sysdep_flag |= sysdep_flag[cnt];
 				}
 			}
 
@@ -352,7 +355,7 @@ enum po_error poparser_finish(struct po_parser *p) {
 	return po_success;
 }
 
-size_t poparser_sysdep(const char *in, char *out, int cnt[]) {
+size_t poparser_sysdep(const char *in, char *out, int num) {
 	const char *x, *y, *outs;
 	size_t m;
 	int n;
@@ -371,7 +374,7 @@ size_t poparser_sysdep(const char *in, char *out, int cnt[]) {
 			if (!strncmp(y, sysdep_str[n], m)) {
 				x = y + m;
 
-				y = sysdep_repl[n][cnt[n]+1];
+				y = sysdep_repl[n][num];
 				m = strlen(y);
 				if (outs)
 					memcpy(out, y, m);

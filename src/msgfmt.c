@@ -77,36 +77,48 @@ int process_line_callback(po_message_t msg, void* user) {
 	struct callbackdata *d = (struct callbackdata *) user;
 	struct strtbl *str, *trans;
 	size_t m;
-	int cnt[st_max] = {0};
-	int i, k;
+	int i, j, k;
 
 	if (msg->flags & PO_FUZZY) return 0;
 	if (msg->strlen[0] == 0) return 0;
 
+	// PO_SYSDEP_PRIUMAX == 0, it has no effects to our codes
+	switch (msg->sysdep_flag) {
+	case PO_SYSDEP_PRIU32:
+	case PO_SYSDEP_PRIU64:
+		k = 2;
+		break;
+	case PO_SYSDEP_PRIU32|PO_SYSDEP_PRIU64:
+		k = 3;
+		break;
+	default:
+		k = 1;
+		break;
+	}
+
 	switch(d->stage) {
 	case ps_size:
-		k = 1;
-		for (i=0; i < st_max; i++)
-			if (msg->sysdep[i])
-				k *= msg->sysdep[i];
-
-		d->len[0] += (msg->id_len + 1)*k;
+		m = 0;
+		m += msg->id_len + 1;
 
 		if (msg->plural_len)
-			d->len[0] += (msg->plural_len + 1)*k;
+			m = msg->plural_len + 1;
 
 		if (msg->ctxt_len)
-			d->len[0] += (msg->ctxt_len + 1)*k;
+			m += msg->ctxt_len + 1;
 
-		for (i=0; msg->strlen[i]; i++)
-			d->len[1] += (msg->strlen[i] + 1)*k;
+		d->len[0] += m * k;
+
+		m = 0;
+		for (i=0; msg->strlen[i]; i++) {
+			m += msg->strlen[i] + 1;
+		}
+		d->len[1] += m * k;
 
 		d->cnt += k;
 		break;
 	case ps_parse:
-		for (k=1; k; d->cnt++) {
-			k = 0;
-
+		for (j=0; j < k; j++) {
 			str = &d->list[d->cnt].str;
 			trans = &d->list[d->cnt].trans;
 
@@ -114,18 +126,18 @@ int process_line_callback(po_message_t msg, void* user) {
 			str->len = 0;
 
 			if (msg->ctxt_len) {
-				m = poparser_sysdep(msg->ctxt, &d->buf[0][d->len[0]], cnt);
+				m = poparser_sysdep(msg->ctxt, &d->buf[0][d->len[0]], j);
 				str->len += m;
 				d->buf[0][d->len[0]+m-1] = 0x4;
 				d->len[0] += m;
 			}
 
-			m = poparser_sysdep(msg->id, &d->buf[0][d->len[0]], cnt);
+			m = poparser_sysdep(msg->id, &d->buf[0][d->len[0]], j);
 			str->len += m;
 			d->len[0] += m;
 
 			if (msg->plural_len) {
-				m = poparser_sysdep(msg->plural, &d->buf[0][d->len[0]], cnt);
+				m = poparser_sysdep(msg->plural, &d->buf[0][d->len[0]], j);
 				str->len += m;
 				d->len[0] += m;
 			}
@@ -133,29 +145,9 @@ int process_line_callback(po_message_t msg, void* user) {
 			trans->off = d->len[1];
 			trans->len = 0;
 			for (i=0; msg->strlen[i]; i++) {
-				m = poparser_sysdep(msg->str[i], &d->buf[1][d->len[1]], cnt);
+				m = poparser_sysdep(msg->str[i], &d->buf[1][d->len[1]], j);
 				trans->len += m;
 				d->len[1] += m;
-			}
-
-			for (i=0; i < st_max; i++) {
-				if (cnt[i] < msg->sysdep[i]) {
-					cnt[i]++;
-
-					// we have a carry
-					if (cnt[i] == msg->sysdep[i]) {
-						cnt[i] = 0;
-						continue;
-					}
-
-					if (cnt[0] == 1 && cnt[1] == 0) {
-						i--;
-						continue;
-					}
-
-					k = 1;
-					break;
-				}
 			}
 		}
 

@@ -15,7 +15,7 @@ enum sysdep_types {
 };
 
 // make sure out has equal or more space than in
-size_t poparser_sysdep(const char *in, char *out, int cnt[]);
+size_t poparser_sysdep(const char *in, char *out, int num);
 
 struct po_header {
 	char charset[12];
@@ -24,6 +24,10 @@ struct po_header {
 };
 
 #define PO_FUZZY 1u
+#define PO_SYSDEP_PRIU32 (1 << st_priu32)
+#define PO_SYSDEP_PRIU64 (1 << st_priu64)
+// for complement, no usage
+#define PO_SYSDEP_PRIUMAX 0
 
 struct po_message {
 	char *ctxt;
@@ -31,7 +35,7 @@ struct po_message {
 	char *plural;
 	char* str[MAX_NPLURALS];
 
-	int sysdep[st_max];
+	int sysdep_flag;
 	size_t ctxt_len;
 	size_t id_len;
 	size_t plural_len;
