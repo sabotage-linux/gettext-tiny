@@ -113,27 +113,27 @@ int process_line_callback(po_message_t msg, void* user) {
 
 			if (msg->ctxt_len) {
 				m = poparser_sysdep(msg->ctxt, &d->buf[0][d->len[0]], j);
-				str->len += m;
-				d->buf[0][d->len[0]+m-1] = 0x4;
-				d->len[0] += m;
+				str->len += m + 1;
+				d->buf[0][d->len[0]+m] = 0x4;
+				d->len[0] += m + 1;
 			}
 
 			m = poparser_sysdep(msg->id, &d->buf[0][d->len[0]], j);
 			str->len += m;
-			d->len[0] += m;
+			d->len[0] += m + 1;
 
 			if (msg->plural_len) {
 				m = poparser_sysdep(msg->plural, &d->buf[0][d->len[0]], j);
-				str->len += m;
-				d->len[0] += m;
+				str->len += m + 1;
+				d->len[0] += m + 1;
 			}
 
 			trans->off = d->len[1];
-			trans->len = 0;
+			trans->len = -1;
 			for (i=0; msg->strlen[i]; i++) {
 				m = poparser_sysdep(msg->str[i], &d->buf[1][d->len[1]], j);
-				trans->len += m;
-				d->len[1] += m;
+				trans->len += m + 1;
+				d->len[1] += m + 1;
 			}
 
 			d->cnt++;

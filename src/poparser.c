@@ -407,6 +407,6 @@ size_t poparser_sysdep(const char *in, char *out, int num) {
 	m = strlen(x);
 	if (outs)
 		memcpy(out, x, m+1);
-	out += m + 1;
+	out += m;
 	return out - outs;
 }

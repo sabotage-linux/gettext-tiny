@@ -15,6 +15,7 @@ enum sysdep_types {
 };
 
 // make sure out has equal or more space than in
+// this add the NULL terminator, but do not count it in size
 size_t poparser_sysdep(const char *in, char *out, int num);
 
 struct po_header {
