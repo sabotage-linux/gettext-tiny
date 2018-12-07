@@ -354,6 +354,7 @@ enum po_error poparser_finish(struct po_parser *p) {
 
 size_t poparser_sysdep(const char *in, char *out, int cnt[]) {
 	const char *x, *y, *outs;
+	size_t m;
 	int n;
 	outs = out;
 	x = in;
@@ -362,24 +363,27 @@ size_t poparser_sysdep(const char *in, char *out, int cnt[]) {
 		y++;
 
 		for (n=0; n < st_max; n++) {
-			if (!strncmp(y, sysdep_str[n], strlen(sysdep_str[n]))) {
+			m = strlen(sysdep_str[n]);
+			if (!strncmp(y, sysdep_str[n], m)) {
 				if (outs)
 					memcpy(out, x, y-x);
 				out += y-x;
-				x = y + strlen(sysdep_str[n]);
+				x = y + m;
 
 				y = sysdep_repl[n][cnt[n]+1];
+				m = strlen(y);
 				if (outs)
-					memcpy(out, y, strlen(y));
-				out += strlen(y);
+					memcpy(out, y, m);
+				out += m; 
 
 				break;
 			}
 		}
 	}
 
+	m = strlen(x);
 	if (outs)
-		memcpy(out, x, strlen(x) + 1);
-	out += strlen(x) + 1;
+		memcpy(out, x, m+1);
+	out += m + 1;
 	return out - outs;
 }
