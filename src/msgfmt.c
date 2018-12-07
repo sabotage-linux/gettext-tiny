@@ -88,7 +88,7 @@ int process_line_callback(po_message_t msg, void* user) {
 		m += msg->id_len + 1;
 
 		if (msg->plural_len)
-			m = msg->plural_len + 1;
+			m += msg->plural_len + 1;
 
 		if (msg->ctxt_len)
 			m += msg->ctxt_len + 1;
