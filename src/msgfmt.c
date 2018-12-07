@@ -148,6 +148,11 @@ int process_line_callback(po_message_t msg, void* user) {
 						continue;
 					}
 
+					if (cnt[0] == 1 && cnt[1] == 0) {
+						i--;
+						continue;
+					}
+
 					k = 1;
 					break;
 				}
