@@ -63,6 +63,7 @@ int process_line_callback(po_message_t msg, void* user) {
 			if (msg->strlen[i] > file->len)
 				file->len = msg->strlen[i] + 1;
 
+		file->len += 1;
 		break;
 	case ps_parse:
 		if (msg->ctxt_len) {
@@ -88,6 +89,7 @@ int process_line_callback(po_message_t msg, void* user) {
 			fprintf(file->out, "msgstr \"%s\"\n", file->buf);
 		}
 
+		fputc('\n', file->out);
 		break;
 	}
 	return 0;
