@@ -358,20 +358,24 @@ size_t poparser_sysdep(const char *in, char *out, int cnt[]) {
 	outs = out;
 	x = in;
 
-	for (n=0; n < st_max;) {
-		if ((y = strstr(x, sysdep_str[n])) && *(y-1) == '%') {
-			if (outs)
-				memcpy(out, x, y-x);
-			out += y-x;
-			x = y + strlen(sysdep_str[n]);
+	while ((y = strchr(x, '%'))) {
+		y++;
 
-			y = sysdep_repl[n][cnt[n]+1];
-			if (outs)
-				memcpy(out, y, strlen(y));
-			out += strlen(y);
+		for (n=0; n < st_max; n++) {
+			if (!memcmp(y, sysdep_str[n], strlen(sysdep_str[n]))) {
+				if (outs)
+					memcpy(out, x, y-x);
+				out += y-x;
+				x = y + strlen(sysdep_str[n]);
 
-			n = 0;
-		} else n++;
+				y = sysdep_repl[n][cnt[n]+1];
+				if (outs)
+					memcpy(out, y, strlen(y));
+				out += strlen(y);
+
+				break;
+			}
+		}
 	}
 
 	if (outs)
