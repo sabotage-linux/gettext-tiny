@@ -362,7 +362,7 @@ size_t poparser_sysdep(const char *in, char *out, int cnt[]) {
 		y++;
 
 		for (n=0; n < st_max; n++) {
-			if (!memcmp(y, sysdep_str[n], strlen(sysdep_str[n]))) {
+			if (!strncmp(y, sysdep_str[n], strlen(sysdep_str[n]))) {
 				if (outs)
 					memcpy(out, x, y-x);
 				out += y-x;
