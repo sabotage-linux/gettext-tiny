@@ -55,8 +55,12 @@ static inline enum po_error poparser_feed_hdr(struct po_parser *p, po_message_t 
 
 		if ((x = strstr(msg->str[0], "charset="))) {
 			for (y = x; *y && !isspace(*y); y++);
+
+			if ((y-x-8) > sizeof(p->hdr.charset))
+				return -po_unsupported_charset;
+
 			memcpy(p->hdr.charset, x+8, y-x-8);
-			p->hdr.charset[y-x] = 0;
+			p->hdr.charset[y-x-8] = 0;
 
 			p->cd = iconv_open("UTF-8", p->hdr.charset);
 			if (p->cd == (iconv_t)-1) {
