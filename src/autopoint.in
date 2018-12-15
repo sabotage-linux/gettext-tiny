@@ -1,6 +1,11 @@
 #!/bin/sh
 m4src=@datadir@/m4
 
+if ! test -e configure.ac ; then
+	echo "$0: error: configure.ac not found" >&2
+	exit 1
+fi
+
 mkdir -p m4 intl po
 for i in $m4src/*.m4 ; do
 	cp -f $i m4/
