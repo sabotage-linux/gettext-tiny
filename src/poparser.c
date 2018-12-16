@@ -82,12 +82,12 @@ static inline enum po_error poparser_feed_hdr(struct po_parser *p, po_message_t 
 static inline enum po_error poparser_clean(struct po_parser *p, po_message_t msg) {
 	enum po_error t;
 
+	if ((t = poparser_feed_hdr(p, msg)) != po_success) {
+		return t;
+	}
+
 	if (p->strcnt) {
 		msg->strlen[p->strcnt] = 0;
-
-		if ((t = poparser_feed_hdr(p, msg)) != po_success) {
-			return t;
-		}
 
 		// PO_SYSDEP_PRIUMAX == 0, it has no effects to our codes
 		switch (msg->sysdep) {
