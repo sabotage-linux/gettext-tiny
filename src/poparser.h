@@ -70,7 +70,7 @@ struct po_parser {
 	bool first;
 	iconv_t cd;
 	enum po_entry previous;
-	int strcnt;
+	unsigned strcnt;
 	size_t max_ctxt_len;
 	size_t max_id_len;
 	size_t max_plural_len;
