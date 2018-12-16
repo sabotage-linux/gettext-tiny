@@ -165,6 +165,9 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 			if ( (len = iconv(p->cd, &line, &line_len, &x, &len)) == (size_t)-1) 
 				return -po_failed_iconv;
 
+			if (line_len != 0)
+				return -po_failed_iconv;
+
 			x = p->buf;
 		}
 
@@ -223,6 +226,9 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 			x = p->buf;
 			len = p->bufsize;
 			if ( (len = iconv(p->cd, &line, &line_len, &x, &len)) == (size_t)-1) 
+				return -po_failed_iconv;
+
+			if (line_len != 0)
 				return -po_failed_iconv;
 
 			x = p->buf;
