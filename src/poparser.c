@@ -1,5 +1,6 @@
 #include <ctype.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include <iconv.h>
 #include "poparser.h"
@@ -56,7 +57,7 @@ static inline enum po_error poparser_feed_hdr(struct po_parser *p, po_message_t 
 		if ((x = strstr(msg->str[0], "charset="))) {
 			for (y = x; *y && !isspace(*y); y++);
 
-			if ((unsigned)(y-x-7) > sizeof(p->hdr.charset))
+			if ((uintptr_t)(y-x-7) > sizeof(p->hdr.charset))
 				return -po_unsupported_charset;
 
 			memcpy(p->hdr.charset, x+8, y-x-8);
