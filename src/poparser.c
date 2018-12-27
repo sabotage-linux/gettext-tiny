@@ -73,8 +73,6 @@ static inline enum po_error poparser_feed_hdr(struct po_parser *p, po_message_t 
 		if ((x = strstr(msg->str[0], "nplurals="))) {
 			p->hdr.nplurals = *(x+9) - '0';
 		}
-
-		p->first = false;
 	}
 
 	return po_success;
@@ -88,6 +86,8 @@ static inline enum po_error poparser_clean(struct po_parser *p, po_message_t msg
 	}
 
 	if (p->strcnt) {
+		if (p->first) p->first = false;
+
 		msg->strlen[p->strcnt] = 0;
 
 		// PO_SYSDEP_PRIUMAX == 0, it has no effects to our codes
