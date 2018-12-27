@@ -173,7 +173,7 @@ int process(FILE *in, FILE *out) {
 	if ((t = poparser_finish(p)) != po_success)
 		return t;
 
-	if (d.cnt == 0) return -1;
+	if (d.cnt == 0) return -(po_error_last+1);
 
 	d.list = (struct strmap*)malloc(sizeof(struct strmap)*d.cnt);
 	d.buf[0] = (char*)malloc(d.len[0]);

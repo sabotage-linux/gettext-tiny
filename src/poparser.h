@@ -89,6 +89,7 @@ enum po_error {
 	po_plurals_overflow,
 	po_invalid_entry,
 	po_internal,
+	po_error_last = po_internal,
 };
 
 void poparser_init(struct po_parser *p, char* workbuf, size_t bufsize, poparser_callback cb, void* cbdata);
