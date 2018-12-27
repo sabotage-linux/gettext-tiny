@@ -48,13 +48,10 @@ void poparser_init(struct po_parser *p, char* workbuf, size_t bufsize, poparser_
 	p->first = true;
 }
 
-static inline enum po_error poparser_feed_hdr(struct po_parser *p, po_message_t msg) {
+static inline enum po_error poparser_feed_hdr(struct po_parser *p, char* msg) {
 	char *x, *y;
-	if (p->stage == ps_parse && p->first) {
-		if (msg->id_len)
-			return -po_invalid_entry;
-
-		if ((x = strstr(msg->str[0], "charset="))) {
+	if (p->first && msg) {
+		if ((x = strstr(msg, "charset="))) {
 			for (y = x; *y && !isspace(*y); y++);
 
 			if ((uintptr_t)(y-x-7) > sizeof(p->hdr.charset))
@@ -70,7 +67,7 @@ static inline enum po_error poparser_feed_hdr(struct po_parser *p, po_message_t 
 			}
 		}
 
-		if ((x = strstr(msg->str[0], "nplurals="))) {
+		if ((x = strstr(msg, "nplurals="))) {
 			p->hdr.nplurals = *(x+9) - '0';
 		}
 	}
@@ -79,12 +76,6 @@ static inline enum po_error poparser_feed_hdr(struct po_parser *p, po_message_t 
 }
 
 static inline enum po_error poparser_clean(struct po_parser *p, po_message_t msg) {
-	enum po_error t;
-
-	if ((t = poparser_feed_hdr(p, msg)) != po_success) {
-		return t;
-	}
-
 	if (p->strcnt) {
 		if (p->first) p->first = false;
 
@@ -187,6 +178,10 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 
 		switch (p->previous) {
 		case po_str:
+			if ((t = poparser_feed_hdr(p, x)) != po_success) {
+				return t;
+			}
+
 			cnt = p->strcnt - 1;
 			if (p->stage == ps_parse) {
 				len = unescape(x, &msg->str[cnt][msg->strlen[cnt]], p->max_strlen[cnt]);
@@ -326,6 +321,10 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 				}
 			} else {
 				return -po_excepted_token;
+			}
+
+			if ((t = poparser_feed_hdr(p, x)) != po_success) {
+				return t;
 			}
 
 			if (p->stage == ps_parse) {
