@@ -242,7 +242,7 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 			if ( (t = poparser_clean(p, msg)) != po_success)
 				return t;
 
-			if (msg->id_len || msg->plural)
+			if (msg->id_len || msg->plural_len)
 				return -po_invalid_entry;
 
 			for (cnt = 0; cnt < st_max; cnt++) {
