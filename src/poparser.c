@@ -376,6 +376,7 @@ enum po_error poparser_finish(struct po_parser *p) {
 			msg->str[cnt] = msg->str[cnt-1] + p->max_strlen[cnt-1];
 
 		p->hdr.nplurals = 2;
+		p->first = true;
 	} else {
 		if ( (t = poparser_clean(p, msg)) != po_success)
 			return t;
