@@ -52,7 +52,7 @@ static inline enum po_error poparser_feed_hdr(struct po_parser *p, char* msg) {
 	char *x, *y;
 	if (p->first && msg) {
 		if ((x = strstr(msg, "charset="))) {
-			for (y = x; *y && !isspace(*y); y++);
+			for (y = x; *y && *y != '\\' && !isspace(*y); y++);
 
 			if ((uintptr_t)(y-x-7) > sizeof(p->hdr.charset))
 				return -po_unsupported_charset;
