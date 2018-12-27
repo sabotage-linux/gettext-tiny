@@ -68,6 +68,7 @@ struct po_parser {
 
 	// private parts
 	bool first;
+	bool strict;
 	iconv_t cd;
 	enum po_entry previous;
 	unsigned strcnt;

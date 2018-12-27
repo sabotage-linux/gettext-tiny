@@ -63,7 +63,7 @@ static inline enum po_error poparser_feed_hdr(struct po_parser *p, char* msg) {
 			p->cd = iconv_open("UTF-8", p->hdr.charset);
 			if (p->cd == (iconv_t)-1) {
 				p->cd = 0;
-				return -po_unsupported_charset;
+				if (p->strict) return -po_unsupported_charset;
 			}
 		}
 
@@ -316,7 +316,7 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 
 				p->strcnt = (cnt = y[1] - '0') + 1;
 
-				if (p->strcnt > p->hdr.nplurals) {
+				if (p->strict && p->strcnt > p->hdr.nplurals) {
 					return -po_plurals_overflow;
 				}
 			} else {
