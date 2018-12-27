@@ -112,6 +112,7 @@ static inline enum po_error poparser_clean(struct po_parser *p, po_message_t msg
 		msg->ctxt_len = 0;
 		msg->id_len = 0;
 		msg->plural_len = 0;
+		msg->flags = 0;
 		p->strcnt = 0;
 	}
 
