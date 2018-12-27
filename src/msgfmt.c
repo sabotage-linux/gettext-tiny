@@ -373,8 +373,6 @@ int main(int argc, char**argv) {
 	if(in != stdin) fclose(in);
 	if(out != stdout) fclose(out);
 
-	if (ret < 0) {
-		return remove(dest);
-	}
+	if (ret < 0) remove(dest);
 	return ret;
 }
