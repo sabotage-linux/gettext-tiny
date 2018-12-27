@@ -132,6 +132,11 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 		// ignore blank lines
 		return po_success;
 	} else if (line[0] == '#') {
+		if (p->previous == po_str) {
+			if ( (t = poparser_clean(p, msg)) != po_success)
+				return t;
+		}
+
 		switch (line[1]) {
 		case ',':
 			x = &line[2];
