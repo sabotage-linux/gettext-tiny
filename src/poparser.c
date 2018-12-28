@@ -289,7 +289,7 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 			if (!msg->id_len || p->strcnt)
 				return -po_invalid_entry;
 
-			if (p->strict && p->hdr.nplurals > 1) {
+			if (p->strict && p->hdr.nplurals < 2) {
 				return -po_plurals_overflow;
 			}
 
