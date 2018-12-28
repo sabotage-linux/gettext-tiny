@@ -146,7 +146,7 @@ int process_line_callback(po_message_t msg, void* user) {
 	return 0;
 }
 
-int process(FILE *in, FILE *out) {
+int process(FILE *in, FILE *out, bool strict) {
 	struct mo_hdr mohdr = def_hdr;
 	char line[8192]; char *lp;
 	size_t off, i;
@@ -164,6 +164,7 @@ int process(FILE *in, FILE *out) {
 	mohdr.off_tbl_trans = mohdr.off_tbl_org;
 
 	poparser_init(p, convbuf, sizeof(convbuf), process_line_callback, &d);
+	p->strict = strict;
 	d.stage = p->stage;
 
 	while((lp = fgets(line, sizeof(line), in))) {
@@ -173,7 +174,7 @@ int process(FILE *in, FILE *out) {
 	if ((t = poparser_finish(p)) != po_success)
 		return t;
 
-	if (d.cnt == 0) return -(po_error_last+1);
+	if (strict && d.cnt == 0) return -(po_error_last+1);
 
 	d.list = (struct strmap*)malloc(sizeof(struct strmap)*d.cnt);
 	d.buf[0] = (char*)malloc(d.len[0]);
@@ -264,6 +265,7 @@ int main(int argc, char**argv) {
 	}
 
 	int arg = 1;
+	bool strict = false;
 	FILE *out = NULL;
 	FILE *in = NULL;
 	int expect_in_fn = 1;
@@ -286,7 +288,6 @@ int main(int argc, char**argv) {
 					streq(A+2, "stringtable-input") ||
 					streq(A+2, "use-fuzzy") ||
 					strstarts(A+2, "alignment=") ||
-					streq(A+2, "check") ||
 					streq(A+2, "check-format") ||
 					streq(A+2, "check-header") ||
 					streq(A+2, "check-domain") ||
@@ -299,6 +300,8 @@ int main(int argc, char**argv) {
 					strstarts(A+2, "resource=")
 					) {
 					} else if((locale = strstarts(A+2, "locale="))) {
+					} else if(streq(A+2, "check")) {
+						strict = true;
 					} else if((dest = strstarts(A+2, "output-file="))) {
 						set_file(1, dest, &out);
 					} else if(streq(A+2, "version")) {
@@ -321,10 +324,11 @@ int main(int argc, char**argv) {
 				streq(A+1, "P") ||
 				streq(A+1, "f") ||
 				streq(A+1, "a") ||
-				streq(A+1, "c") ||
 				streq(A+1, "v") ||
 				streq(A+1, "C")
 			) {
+			} else if (streq(A+1, "c")) {
+				strict = true;
 			} else if (streq(A+1, "V")) {
 				version();
 				return 0;
@@ -367,7 +371,7 @@ int main(int argc, char**argv) {
 		return -1;
 	}
 
-	int ret = process(in, out);
+	int ret = process(in, out, strict);
 	fflush(in); fflush(out);
 
 	if(in != stdin) fclose(in);
