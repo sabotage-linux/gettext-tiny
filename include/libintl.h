@@ -4,12 +4,25 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-char *gettext(const char *msgid);
-char *dgettext(const char *domainname, const char *msgid);
-char *dcgettext(const char *domainname, const char *msgid, int category);
-char *ngettext(const char *msgid1, const char *msgid2, unsigned long n);
-char *dngettext(const char *domainname, const char *msgid1, const char *msgid2, unsigned long n);
-char *dcngettext(const char *domainname, const char *msgid1, const char *msgid2, unsigned long n, int category);
+
+#if __GNUC__ + 0 >= 3
+# define GETTEXT_INTERNAL_FA(n) __attribute__ ((__format_arg__ (n)))
+#else
+# define GETTEXT_INTERNAL_FA(n)
+#endif
+
+char *gettext(const char *msgid)
+	GETTEXT_INTERNAL_FA(1);
+char *dgettext(const char *domainname, const char *msgid)
+	GETTEXT_INTERNAL_FA(2);
+char *dcgettext(const char *domainname, const char *msgid, int category)
+	GETTEXT_INTERNAL_FA(2);
+char *ngettext(const char *msgid1, const char *msgid2, unsigned long n)
+	GETTEXT_INTERNAL_FA(1) GETTEXT_INTERNAL_FA(2);
+char *dngettext(const char *domainname, const char *msgid1, const char *msgid2, unsigned long n)
+	GETTEXT_INTERNAL_FA(2) GETTEXT_INTERNAL_FA(3);
+char *dcngettext(const char *domainname, const char *msgid1, const char *msgid2, unsigned long n, int category)
+	GETTEXT_INTERNAL_FA(2) GETTEXT_INTERNAL_FA(3);
 
 char *textdomain(const char *domainname);
 char *bind_textdomain_codeset(const char *domainname, const char *codeset);
