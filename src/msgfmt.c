@@ -198,6 +198,11 @@ static char** sysdep_transform(const char* text, unsigned textlen, unsigned *len
 	return out;
 }
 
+static void error(const char* msg) {
+	fprintf(stderr, msg);
+	exit(1);
+}
+
 static inline void writemsg(struct callbackdata *d) {
 	if(d->msgidbuf1_len != 0) {
 		if(!d->strlist[d->curr[pe_msgid]].str.off)
