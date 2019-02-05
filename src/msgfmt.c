@@ -414,8 +414,9 @@ int main(int argc, char**argv) {
 		}
 
 		ret = process(in, out, strict);
+		break;
 	default:
-		fprintf(stderr, "unsupported mode %d", mode);
+		fprintf(stderr, "unsupported mode %d\n", mode);
 		ret = -1;
 	}
 
