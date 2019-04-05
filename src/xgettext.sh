@@ -20,7 +20,7 @@ show_version() {
 	exit 0
 }
 
-while true ; do
+while [ $# -gt 0 ] ; do
 	case $1 in
 	#--files-from=*) readfile `spliteq "$1"`;;
 	#-f) expectfilefrom=1;;
@@ -97,7 +97,6 @@ while true ; do
 	-M*) : ;;
 	--help) syntax ;;
 	-h) syntax ;;
-	*) break ;;
 	esac
 	shift
 done
