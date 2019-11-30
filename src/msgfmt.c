@@ -313,6 +313,7 @@ int main(int argc, char**argv) {
 					streq(A+2, "no-hash") ||
 					streq(A+2, "verbose") ||
 					streq(A+2, "statistics") ||
+					strstarts(A+2, "keyword=") ||
 					strstarts(A+2, "check-accelerators=") ||
 					strstarts(A+2, "resource=")
 					) {
@@ -335,8 +336,13 @@ int main(int argc, char**argv) {
 					} else if((locale = strstarts(A+2, "locale="))) {
 					} else if(streq(A+2, "check")) {
 						strict = true;
+					} else if(strstarts(A+2, "template=")) {
+						set_file(0, A+11, &in);
+						expect_in_fn = 0;
 					} else if(strstarts(A+2, "output-file=")) {
 						set_file(1, A+14, &out);
+					} else if(strstarts(A+2, "output=")) {
+						set_file(1, A+9, &out);
 					} else if(streq(A+2, "version")) {
 						version();
 						return 0;
