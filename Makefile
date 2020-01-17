@@ -88,6 +88,6 @@ $(DESTDIR)$(datadir)/%: %
 	$(INSTALL) -D -m 644 $< $@
 
 $(DESTDIR)$(acdir)/%: %
-	$(INSTALL) -D -l ../$(subst $(datarootdir)/,,$(datadir))/$< $(subst m4/,,$@)
+	$(INSTALL) -D -l ../$(subst $(datarootdir)/,,$(datadir))/$< $(patsubst %m4/,%,$(dir $@))/$(notdir $@)
 
 .PHONY: all clean install
