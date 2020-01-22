@@ -47,7 +47,7 @@ struct fiLes {
  * i.e. there is no translation lookup at all */
 int process_line_callback(po_message_t msg, void* user) {
 	struct fiLes* file = (struct fiLes*) user;
-	int i;
+	int i, j, k;
 	switch (file->stage) {
 	case ps_size:
 		if (msg->ctxt_len > file->len)
@@ -68,25 +68,40 @@ int process_line_callback(po_message_t msg, void* user) {
 	case ps_parse:
 		if (msg->ctxt_len) {
 			escape(msg->ctxt, file->buf, file->len);
-			fprintf(file->out, "msgctxt \"%s\"\n", file->buf);
+			fprintf(file->out, "msgctxt \"%.1024s\"\n", file->buf);
+			k = strlen(file->buf);
+			for (j = 1024; j < k; j += 1024)
+				fprintf(file->out, "\"%.1024s\"\n", &file->buf[j]);
 		}
 
 		escape(msg->id, file->buf, file->len);
-		fprintf(file->out, "msgid \"%s\"\n", file->buf);
+		fprintf(file->out, "msgid \"%.1024s\"\n", file->buf);
+		k = strlen(file->buf);
+		for (j = 1024; j < k; j += 1024)
+			fprintf(file->out, "\"%.1024s\"\n", &file->buf[j]);
 
 		if (msg->plural_len) {
 			escape(msg->plural, file->buf, file->len);
-			fprintf(file->out, "msgid_plural \"%s\"\n", file->buf);
+			fprintf(file->out, "msgid_plural \"%.1024s\"\n", file->buf);
+			k = strlen(file->buf);
+			for (j = 1024; j < k; j += 1024)
+				fprintf(file->out, "\"%.1024s\"\n", &file->buf[j]);
 		}
 
 		if (msg->plural_len) {
 			for (i=0; i < MAX_NPLURALS && msg->strlen[i]; i++) {
 				escape(msg->str[i], file->buf, file->len);
-				fprintf(file->out, "msgstr[%d] \"%s\"\n", i, file->buf);
+				fprintf(file->out, "msgstr[%d] \"%.1024s\"\n", i, file->buf);
+				k = strlen(file->buf);
+				for (j = 1024; j < k; j += 1024)
+					fprintf(file->out, "\"%.1024s\"\n", &file->buf[j]);
 			}
 		} else {
 			escape(msg->str[0], file->buf, file->len);
-			fprintf(file->out, "msgstr \"%s\"\n", file->buf);
+			fprintf(file->out, "msgstr \"%.1024s\"\n", file->buf);
+			k = strlen(file->buf);
+			for (j = 1024; j < k; j += 1024)
+				fprintf(file->out, "\"%.1024s\"\n", &file->buf[j]);
 		}
 
 		fputc('\n', file->out);
