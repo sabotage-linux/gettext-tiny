@@ -67,17 +67,26 @@ struct po_parser {
 	enum po_stage stage;
 
 	// private parts
-	bool first;
 	bool strict;
 	iconv_t cd;
-	enum po_entry previous;
-	unsigned strcnt;
+
+	size_t current_trans_index;
+	enum po_entry current_entry;
+	unsigned current_strcnt;
+
 	size_t max_ctxt_len;
 	size_t max_id_len;
 	size_t max_plural_len;
 	size_t max_strlen[MAX_NPLURALS];
+
 	char *buf;
 	size_t bufsize;
+	size_t bufpos;
+
+	char *iconv_buf;
+	size_t iconv_bufpos;
+	size_t iconv_bufsize;
+
 	poparser_callback cb;
 	void *cbdata;
 };
@@ -93,8 +102,8 @@ enum po_error {
 	po_error_last = po_internal,
 };
 
-void poparser_init(struct po_parser *p, char* workbuf, size_t bufsize, poparser_callback cb, void* cbdata);
-enum po_error poparser_feed_line(struct po_parser *p, char* line, size_t buflen);
+void poparser_init(struct po_parser *p, poparser_callback cb, void* cbdata);
+enum po_error poparser_feed(struct po_parser *p, char* line, size_t buflen);
 enum po_error poparser_finish(struct po_parser *p);
 
 #endif

@@ -99,32 +99,43 @@ int process(struct fiLes *files, int update, int backup) {
 	(void) update; (void) backup;
 	enum po_error t;
 	struct po_parser pb, *p = &pb;
-	char line[8192], conv[32768], *lb;
+	char line[4096];
+	size_t sz;
 
 	files->stage = ps_size;
 	files->len = 0;
-	poparser_init(p, conv, sizeof(conv), process_line_callback, files);
-	while((lb = fgets(line, sizeof(line), files->po))) {
-		if ((t = poparser_feed_line(p, lb, strlen(line))) != po_success)
-			return t;
+	poparser_init(p, process_line_callback, files);
+	while((sz = fread(line, 1, sizeof(line), files->po)) != 0) {
+		if ((t = poparser_feed(p, line, sz)) < 0)
+			return -t;
 	}
-	if ((t = poparser_finish(p)) != po_success)
+	if (ferror(files->po)) {
+		fprintf(stderr, "file read error\n");
+		return -1;
+	}
+	if ((t = poparser_finish(p)) < 0) {
 		free(files->buf);
+		return -t;
+	}
 
 	files->stage = ps_parse;
 	files->len *= 2;
 	files->buf = (char*)malloc(files->len);
 	fseek(files->po, 0, SEEK_SET);
 
-	while((lb = fgets(line, sizeof(line), files->po))) {
-		if ((t = poparser_feed_line(p, lb, strlen(line))) != po_success) {
+	while((sz = fread(line, 1, sizeof(line), files->po)) != 0) {
+		if ((t = poparser_feed(p, line, sz)) < 0) {
 			free(files->buf);
-			return t;
+			return -t;
 		}
 	}
-	if ((t = poparser_finish(p)) != po_success) {
+	if (ferror(files->po)) {
+		fprintf(stderr, "file read error\n");
+		return -1;
+	}
+	if ((t = poparser_finish(p)) < 0) {
 		free(files->buf);
-		return t;
+		return -t;
 	}
 
 	free(files->buf);

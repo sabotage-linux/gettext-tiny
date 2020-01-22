@@ -160,10 +160,9 @@ int process_line_callback(po_message_t msg, void* user) {
 
 int process(FILE *in, FILE *out, bool strict) {
 	struct mo_hdr mohdr = def_hdr;
-	char line[8192]; char *lp;
-	size_t off, i;
+	char line[4096];
+	size_t off, i, sz;
 	enum po_error t;
-	char convbuf[32768];
 
 	struct callbackdata d = {
 		.len = {0, 0},
@@ -175,15 +174,19 @@ int process(FILE *in, FILE *out, bool strict) {
 
 	mohdr.off_tbl_trans = mohdr.off_tbl_org;
 
-	poparser_init(p, convbuf, sizeof(convbuf), process_line_callback, &d);
+	poparser_init(p, process_line_callback, &d);
 	p->strict = strict;
 	d.stage = p->stage;
 
-	while((lp = fgets(line, sizeof(line), in))) {
-		if ((t = poparser_feed_line(p, lp, strlen(line))) != po_success)
-			return t;
+	while((sz = fread(line, 1, sizeof(line), in)) != 0) {
+		if ((t = poparser_feed(p, line, sz)) < 0)
+			return -t;
+ 	}
+	if (ferror(in)) {
+		fprintf(stderr, "file read error\n");
+		return -1;
 	}
-	if ((t = poparser_finish(p)) != po_success)
+	if ((t = poparser_finish(p)) < 0)
 		return t;
 
 	if (strict && d.cnt == 0) return -(po_error_last+1);
@@ -197,15 +200,19 @@ int process(FILE *in, FILE *out, bool strict) {
 	d.stage = p->stage;
 
 	fseek(in, 0, SEEK_SET);
-	while ((lp = fgets(line, sizeof(line), in))) {
-		if ((t = poparser_feed_line(p, lp, strlen(line))) != po_success) {
+	while((sz = fread(line, 1, sizeof(line), in)) != 0) {
+		if ((t = poparser_feed(p, line, sz)) < 0) {
 			free(d.list);
 			free(d.buf[0]);
 			free(d.buf[1]);
 			return t;
 		}
 	}
-	if ((t = poparser_finish(p)) != po_success) {
+	if (ferror(in)) {
+		fprintf(stderr, "file read error\n");
+		return -1;
+	}
+	if ((t = poparser_finish(p)) < 0) {
 		free(d.list);
 		free(d.buf[0]);
 		free(d.buf[1]);
