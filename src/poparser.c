@@ -112,6 +112,7 @@ static inline enum po_error poparser_clean(struct po_parser *p, po_message_t msg
 
 enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 	char *line = in;
+	size_t line_pos;
 	size_t line_len = in_len;
 	po_message_t msg = &p->msg;
 	int cnt = 0;
@@ -119,238 +120,247 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 	size_t len;
 	char *x, *y, *z;
 
-	if (line_len == 0 || line[0] == '\n') {
-		// ignore blank lines
-		return po_success;
-	} else if (line[0] == '#') {
-		if (p->previous == po_str) {
-			if ( (t = poparser_clean(p, msg)) != po_success)
-				return t;
-		}
+	// if we need to conv encodings
+	if (p->cd) {
+		x = p->buf;
+		len = p->bufsize;
+		if (iconv(p->cd, &line, &line_len, &x, &len) == (size_t)-1)
+			return -po_failed_iconv;
 
-		switch (line[1]) {
-		case ',':
-			x = &line[2];
-			while (*x && (y = strpbrk(x, " ,\n"))) {
-				if (y != x && !memcmp(x, "fuzzy", y-x)) {
-					msg->flags |= PO_FUZZY;
-				}
-				x = y + strspn(y, " ,\n");
-			}
-			break;
-		case '.':
-			// extracted comments for translators, ignore
-		case ':':
-			// reference comments for translators, ignore
-		case '|':
-			// previous untranslated strings for translators, ignore
-		default:
-			// ignore normal comments
-			return po_success;
-		}
-	} else if (line[0] == '"') {
-		if ( (y = strrchr(x = &line[1], '"')) == NULL)
-			return -po_excepted_token;
+		if (line_len != 0)
+			return -po_failed_iconv;
 
-		len = y - x;
-		*y = 0;
-
-		if (p->cd) {
-			line = x;
-			line_len = len + 1;
-			x = p->buf;
-			len = p->bufsize;
-			if (iconv(p->cd, &line, &line_len, &x, &len) == (size_t)-1) 
-				return -po_failed_iconv;
-
-			if (line_len != 0)
-				return -po_failed_iconv;
-
-			len = x - p->buf; 
-			x = p->buf;
-		}
-
-		for (cnt = 0; cnt < st_max; cnt++) {
-			if (strstr(x, sysdep_str[cnt])) {
-				msg->sysdep |= sysdep[cnt];
-			}
-		}
-
-		switch (p->previous) {
-		case po_str:
-			if ((t = poparser_feed_hdr(p, x)) != po_success) {
-				return t;
-			}
-
-			cnt = p->strcnt - 1;
-			if (p->stage == ps_parse) {
-				len = unescape(x, &msg->str[cnt][msg->strlen[cnt]], p->max_strlen[cnt]);
-			}
-
-			msg->strlen[cnt] += len;
-			break;
-		case po_plural:
-			if (p->stage == ps_parse) {
-				len = unescape(x, &msg->plural[msg->plural_len], p->max_plural_len);
-			}
-
-			msg->plural_len += len;
-			break;
-		case po_id:
-			if (p->stage == ps_parse) {
-				len = unescape(x, &msg->id[msg->id_len], p->max_id_len);
-			}
-
-			msg->id_len += len;
-			break;
-		case po_ctxt:
-			if (p->stage == ps_parse) {
-				len = unescape(x, &msg->ctxt[msg->ctxt_len], p->max_ctxt_len);
-			}
-
-			msg->ctxt_len += len;
-			break;
-		default:
-			return -po_invalid_entry;
-		}
-	} else if ((z = strstarts(line, "msg"))) {
-		if ( (x = strchr(z, '"')) == NULL)
-			return -po_excepted_token;
-
-		if ( (y = strrchr(x+1, '"')) == NULL)
-			return -po_excepted_token;
-
-		len = y - ++x;
-		*y = 0;
-
-		if (p->cd) {
-			line = x;
-			line_len = len + 1;
-			x = p->buf;
-			len = p->bufsize;
-
-			if (iconv(p->cd, &line, &line_len, &x, &len) == (size_t)-1) 
-				return -po_failed_iconv;
-
-			if (line_len != 0)
-				return -po_failed_iconv;
-
-			len = x - p->buf; 
-			x = p->buf;
-		}
-
-		if ((y = strstarts(z, "ctxt")) && isspace(*y)) {
-			if ( (t = poparser_clean(p, msg)) != po_success)
-				return t;
-
-			if (msg->id_len || msg->plural_len)
-				return -po_invalid_entry;
-
-			for (cnt = 0; cnt < st_max; cnt++) {
-				if (strstr(x, sysdep_str[cnt])) {
-					msg->sysdep |= sysdep[cnt];
-				}
-			}
-
-			if (p->stage == ps_parse) {
-				if (msg->ctxt == NULL) {
-					return -po_internal;
-				}
-
-				len = unescape(x, msg->ctxt, p->max_ctxt_len);
-			}
-
-			msg->ctxt_len = len;
-			p->previous = po_ctxt;
-		} else if ((y = strstarts(z, "id")) && isspace(*y)) {
-			if ( (t = poparser_clean(p, msg)) != po_success)
-				return t;
-
-			if (msg->plural_len)
-				return -po_invalid_entry;
-
-			for (cnt = 0; cnt < st_max; cnt++) {
-				if (strstr(x, sysdep_str[cnt])) {
-					msg->sysdep |= sysdep[cnt];
-				}
-			}
-
-			if (p->stage == ps_parse) {
-				if (msg->id == NULL) {
-					return -po_internal;
-				}
-
-				len = unescape(x, msg->id, p->max_id_len);
-			}
-
-			msg->id_len = len;
-			p->previous = po_id;
-		} else if ((y = strstarts(z, "id_plural")) && isspace(*y)) {
-			if (!msg->id_len || p->strcnt)
-				return -po_invalid_entry;
-
-			if (p->stage == ps_parse) {
-				if (msg->plural == NULL) {
-					return -po_internal;
-				}
-
-				len = unescape(x, msg->plural, p->max_plural_len);
-			}
-
-			msg->plural_len = len;
-			p->previous = po_plural;
-		} else if ((y = strstarts(z, "str"))) {
-			if (!msg->id_len && !p->first)
-				return -po_invalid_entry;
-
-			if (isspace(*y)) {
-				if (p->strcnt || msg->plural_len)
-					return -po_invalid_entry;
-
-				cnt = (p->strcnt = 1) - 1;
-			} else if (*y == '[') {
-				if (!msg->plural_len)
-					return -po_invalid_entry;
-
-				if (y[2] != ']' || !isspace(y[3])) return -po_excepted_token;
-
-				p->strcnt = (cnt = y[1] - '0') + 1;
-
-				if (p->strict && p->strcnt > p->hdr.nplurals) {
-					return -po_plurals_overflow;
-				}
-			} else {
-				return -po_excepted_token;
-			}
-
-			if ((t = poparser_feed_hdr(p, x)) != po_success) {
-				return t;
-			}
-
-			if (p->stage == ps_parse) {
-				if (msg->str[cnt] == NULL) {
-					return -po_internal;
-				}
-
-				len = unescape(x, msg->str[cnt], p->max_strlen[cnt]);
-			}
-
-			msg->strlen[cnt] = len;
-			p->previous = po_str;
-		} else {
-			return -po_invalid_entry;
-		}
+		line_len = x - p->buf;
+		line = p->buf;
 	}
 
-	if (p->stage == ps_size) {
-		if (p->max_strlen[cnt] < msg->strlen[cnt])
-			p->max_strlen[cnt] = msg->strlen[cnt] + 1;
-		if (p->max_plural_len < msg->plural_len)
-			p->max_plural_len = msg->plural_len + 1;
-		if (p->max_id_len < msg->id_len)
-			p->max_id_len = msg->id_len + 1;
-		if (p->max_ctxt_len < msg->ctxt_len)
-			p->max_ctxt_len = msg->ctxt_len + 1;
+	for (line_pos=0; line_pos < line_len;) {
+		switch (line[line_pos]) {
+		case '\n':
+		case ' ':
+			line_pos++;
+			break;
+		case '#':
+			if (p->previous == po_str) {
+				if ( (t = poparser_clean(p, msg)) != po_success)
+					return t;
+			}
+
+			switch (line[line_pos+1]) {
+			case ',':
+				x = &line[line_pos+2];
+				while (*x && (y = strpbrk(x, " ,\n"))) {
+					if (y != x && !memcmp(x, "fuzzy", y-x)) {
+						msg->flags |= PO_FUZZY;
+					}
+					x = y + strspn(y, " ,\n");
+				}
+				break;
+			case '.':
+				// extracted comments for translators, ignore
+			case ':':
+				// reference comments for translators, ignore
+			case '|':
+				// previous untranslated strings for translators, ignore
+			default:
+				// ignore normal comments
+				break;
+			}
+
+			// whole line is commented
+			line_pos = line_len;
+			break;
+		case '"':
+			y = x = &line[line_pos+1];
+			while (true) {
+				if ( (y = strchr(y, '"')) == NULL)
+					return -po_excepted_token;
+
+				// only if it's not an escaped "
+				if (*(y-1) != '\\') break;
+			}
+
+			len = y - x;
+			*y = 0;
+			line_pos += len + 2;
+
+			for (cnt = 0; cnt < st_max; cnt++) {
+				if (strstr(x, sysdep_str[cnt])) {
+					msg->sysdep |= sysdep[cnt];
+				}
+			}
+
+			switch (p->previous) {
+			case po_str:
+				if ((t = poparser_feed_hdr(p, x)) != po_success) {
+					return t;
+				}
+
+				cnt = p->strcnt - 1;
+				if (p->stage == ps_parse) {
+					len = unescape(x, &msg->str[cnt][msg->strlen[cnt]], p->max_strlen[cnt]);
+				}
+
+				msg->strlen[cnt] += len;
+				break;
+			case po_plural:
+				if (p->stage == ps_parse) {
+					len = unescape(x, &msg->plural[msg->plural_len], p->max_plural_len);
+				}
+
+				msg->plural_len += len;
+				break;
+			case po_id:
+				if (p->stage == ps_parse) {
+					len = unescape(x, &msg->id[msg->id_len], p->max_id_len);
+				}
+
+				msg->id_len += len;
+				break;
+			case po_ctxt:
+				if (p->stage == ps_parse) {
+					len = unescape(x, &msg->ctxt[msg->ctxt_len], p->max_ctxt_len);
+				}
+
+				msg->ctxt_len += len;
+				break;
+			default:
+				return -po_invalid_entry;
+			}
+
+			break;
+		default:
+			if ((z = strstarts(&line[line_pos], "msg"))) {
+				if ( (x = strchr(z, '"')) == NULL)
+					return -po_excepted_token;
+
+				y = ++x;
+				while (true) {
+					if ( (y = strchr(y, '"')) == NULL)
+						return -po_excepted_token;
+
+					// only if it's not an escaped "
+					if (*(y-1) != '\\') break;
+				}
+
+				len = y - x;
+				*y = 0;
+				line_pos += y - &line[line_pos] + 1;
+
+				if ((y = strstarts(z, "ctxt")) && isspace(*y)) {
+					if ( (t = poparser_clean(p, msg)) != po_success)
+						return t;
+
+					if (msg->id_len || msg->plural_len)
+						return -po_invalid_entry;
+
+					for (cnt = 0; cnt < st_max; cnt++) {
+						if (strstr(x, sysdep_str[cnt])) {
+							msg->sysdep |= sysdep[cnt];
+						}
+					}
+
+					if (p->stage == ps_parse) {
+						if (msg->ctxt == NULL) {
+							return -po_internal;
+						}
+
+						len = unescape(x, msg->ctxt, p->max_ctxt_len);
+					}
+
+					msg->ctxt_len = len;
+					p->previous = po_ctxt;
+				} else if ((y = strstarts(z, "id")) && isspace(*y)) {
+					if ( (t = poparser_clean(p, msg)) != po_success)
+						return t;
+
+					if (msg->plural_len)
+						return -po_invalid_entry;
+
+					for (cnt = 0; cnt < st_max; cnt++) {
+						if (strstr(x, sysdep_str[cnt])) {
+							msg->sysdep |= sysdep[cnt];
+						}
+					}
+
+					if (p->stage == ps_parse) {
+						if (msg->id == NULL) {
+							return -po_internal;
+						}
+
+						len = unescape(x, msg->id, p->max_id_len);
+					}
+
+					msg->id_len = len;
+					p->previous = po_id;
+				} else if ((y = strstarts(z, "id_plural")) && isspace(*y)) {
+					if (!msg->id_len || p->strcnt)
+						return -po_invalid_entry;
+
+					if (p->stage == ps_parse) {
+						if (msg->plural == NULL) {
+							return -po_internal;
+						}
+
+						len = unescape(x, msg->plural, p->max_plural_len);
+					}
+
+					msg->plural_len = len;
+					p->previous = po_plural;
+				} else if ((y = strstarts(z, "str"))) {
+					if (!msg->id_len && !p->first)
+						return -po_invalid_entry;
+
+					if (isspace(*y)) {
+						if (p->strcnt || msg->plural_len)
+							return -po_invalid_entry;
+
+						cnt = (p->strcnt = 1) - 1;
+					} else if (*y == '[') {
+						if (!msg->plural_len)
+							return -po_invalid_entry;
+
+						if (y[2] != ']' || !isspace(y[3])) return -po_excepted_token;
+
+						p->strcnt = (cnt = y[1] - '0') + 1;
+
+						if (p->strict && p->strcnt > p->hdr.nplurals) {
+							return -po_plurals_overflow;
+						}
+					} else {
+						return -po_excepted_token;
+					}
+
+					if ((t = poparser_feed_hdr(p, x)) != po_success) {
+						return t;
+					}
+
+					if (p->stage == ps_parse) {
+						if (msg->str[cnt] == NULL) {
+							return -po_internal;
+						}
+
+						len = unescape(x, msg->str[cnt], p->max_strlen[cnt]);
+					}
+
+					msg->strlen[cnt] = len;
+					p->previous = po_str;
+				} else {
+					return -po_invalid_entry;
+				}
+			}
+		}
+
+		if (p->stage == ps_size) {
+			if (p->max_strlen[cnt] < msg->strlen[cnt])
+				p->max_strlen[cnt] = msg->strlen[cnt] + 1;
+			if (p->max_plural_len < msg->plural_len)
+				p->max_plural_len = msg->plural_len + 1;
+			if (p->max_id_len < msg->id_len)
+				p->max_id_len = msg->id_len + 1;
+			if (p->max_ctxt_len < msg->ctxt_len)
+				p->max_ctxt_len = msg->ctxt_len + 1;
+		}
 	}
 
 	return po_success;
@@ -417,7 +427,7 @@ size_t poparser_sysdep(const char *in, char *out, int num) {
 				m = strlen(y);
 				if (outs)
 					memcpy(out, y, m);
-				out += m; 
+				out += m;
 
 				break;
 			}
