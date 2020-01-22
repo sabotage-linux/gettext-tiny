@@ -398,12 +398,12 @@ enum po_error poparser_finish(struct po_parser *p) {
 			len += p->max_strlen[cnt];
 
 		memset(msg, 0, sizeof(struct po_message));
-		msg->ctxt = (char*)malloc(len);
-		msg->id = msg->ctxt + p->max_ctxt_len;
-		msg->plural = msg->id + p->max_id_len;
-		msg->str[0] = msg->plural + p->max_plural_len;
-		for (cnt = 1; cnt < MAX_NPLURALS; cnt++)
-			msg->str[cnt] = msg->str[cnt-1] + p->max_strlen[cnt-1];
+		msg->ctxt = (char*)malloc(p->max_ctxt_len);
+		msg->id = (char*)malloc(p->max_id_len);
+		msg->plural = (char*)malloc(p->max_plural_len);
+
+		for (cnt = 0; cnt < MAX_NPLURALS; cnt++)
+			msg->str[cnt] = (char*)malloc(p->max_strlen[cnt]);
 
 		p->hdr.nplurals = 2;
 		p->current_trans_index = 0;
@@ -414,7 +414,14 @@ enum po_error poparser_finish(struct po_parser *p) {
 			return t;
 		if ( (t = poparser_clean(p, msg)) != po_success)
 			return t;
+
 		if (msg->ctxt) free(msg->ctxt);
+		if (msg->id) free(msg->id);
+		if (msg->plural) free(msg->plural);
+
+		for (cnt = 0; cnt < MAX_NPLURALS; cnt++)
+			if (msg->str[cnt]) free(msg->str[cnt]);
+
 		if (p->cd) iconv_close(p->cd);
 	}
 
