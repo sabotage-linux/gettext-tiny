@@ -398,12 +398,12 @@ enum po_error poparser_finish(struct po_parser *p) {
 			len += p->max_strlen[cnt];
 
 		memset(msg, 0, sizeof(struct po_message));
-		msg->ctxt = (char*)malloc(p->max_ctxt_len);
-		msg->id = (char*)malloc(p->max_id_len);
-		msg->plural = (char*)malloc(p->max_plural_len);
+		msg->ctxt = malloc(p->max_ctxt_len);
+		msg->id = malloc(p->max_id_len);
+		msg->plural = malloc(p->max_plural_len);
 
 		for (cnt = 0; cnt < MAX_NPLURALS; cnt++)
-			msg->str[cnt] = (char*)malloc(p->max_strlen[cnt]);
+			msg->str[cnt] = malloc(p->max_strlen[cnt]);
 
 		p->hdr.nplurals = 2;
 		p->current_trans_index = 0;
