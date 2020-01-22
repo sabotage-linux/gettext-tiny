@@ -422,6 +422,8 @@ enum po_error poparser_finish(struct po_parser *p) {
 		for (cnt = 0; cnt < MAX_NPLURALS; cnt++)
 			if (msg->str[cnt]) free(msg->str[cnt]);
 
+		if (p->buf) free(p->buf);
+		if (p->iconv_buf) free(p->iconv_buf);
 		if (p->cd) iconv_close(p->cd);
 	}
 
