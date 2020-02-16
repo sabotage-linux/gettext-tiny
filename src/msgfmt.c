@@ -45,8 +45,8 @@ struct mo_hdr {
 
 /* file layout:
 	header
-	strtable (lenghts/offsets)
-	transtable (lenghts/offsets)
+	strtable (lengths/offsets)
+	transtable (lengths/offsets)
 	[hashtable]
 	strings section
 	translations section */
