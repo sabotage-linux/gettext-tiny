@@ -278,7 +278,7 @@ void set_file(int out, char* fn, FILE** dest) {
 int main(int argc, char**argv) {
 	if (argc == 1) {
 		syntax();
-		return 0;
+		return 1;
 	}
 
 	int arg = 1;
@@ -376,7 +376,7 @@ int main(int argc, char**argv) {
 				streq(A+1, "D")
 			) {
 				syntax();
-				return 0;
+				return 1;
 			} else if (streq(A+1, "l")) {
 				arg++;
 				locale = A;
