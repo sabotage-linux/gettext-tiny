@@ -32,7 +32,7 @@ ALL_TOOLS=msgfmt msgmerge xgettext autopoint
 ALL_M4S=$(sort $(wildcard m4/*.m4))
 ALL_DATA=$(sort $(wildcard data/*))
 
-CFLAGS=-O0 -fPIC
+CFLAGS  ?= -O0 -fPIC
 
 AR      ?= $(CROSS_COMPILE)ar
 RANLIB  ?= $(CROSS_COMPILE)ranlib
