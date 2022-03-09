@@ -16,7 +16,7 @@ syntax() {
 }
 
 show_version() {
-	printf "%s\n", "xgettext (GNU gettext-tools compatible) 99.9999.9999\n"
+	printf "%s\n" "xgettext (GNU gettext-tools-compatible) 99.99"
 	exit 0
 }
 
