@@ -42,7 +42,7 @@ make LIBINTL=FLAVOR
 make LIBINTL=FLAVOR DESTDIR=pkgdir prefix=/ install
 ```
 
-where FLAVOR can be one of NONE, MUSL, NOOP (as detailed above).
+where FLAVOR can be one of "none", "musl", NOOP (as detailed above).
 you can override any variables used in the Makefile (such as `CFLAGS`) by
 appending them to the `make` invocation, or by saving them into a file called
 `config.mak` before running `make`.

@@ -7,17 +7,11 @@ datarootdir=$(prefix)/share
 datadir=$(datarootdir)/gettext-tiny
 acdir=$(datarootdir)/aclocal
 
-ifeq ($(LIBINTL), MUSL)
-	LIBSRC = libintl/libintl-musl.c
-	HEADERS =
-else ifeq ($(LIBINTL), NONE)
-	LIBSRC =
-	HEADERS =
-else
-	LIBSRC = libintl/libintl.c
-	HEADERS = libintl.h
-endif
-PROGSRC = $(sort $(wildcard src/*.c))
+-include libintl-$(LIBINTL).mak
+LIBSRC ?= libintl/libintl.c
+HEADERS ?= libintl.h
+
+PROGSRC != ls src/*.c
 
 PARSEROBJS = src/poparser.o src/StringEscape.o
 PROGOBJS = $(PROGSRC:.c=.o)
@@ -25,12 +19,10 @@ LIBOBJS = $(LIBSRC:.c=.o)
 OBJS = $(PROGOBJS) $(LIBOBJS)
 
 ALL_INCLUDES = $(HEADERS)
-ifneq ($(LIBINTL), NONE)
-ALL_LIBS=libintl.a
-endif
+ALL_LIBS ?= libintl.a
 ALL_TOOLS=msgfmt msgmerge xgettext autopoint
-ALL_M4S=$(sort $(wildcard m4/*.m4))
-ALL_DATA=$(sort $(wildcard data/*))
+ALL_M4S!=	ls m4/*.m4
+ALL_DATA!=	ls data/*
 
 CFLAGS  ?= -O0 -fPIC
 
@@ -42,7 +34,7 @@ INSTALL ?= ./install.sh
 
 -include config.mak
 
-LDLIBS:=$(shell echo "int main(){}" | $(CC) -liconv -x c - >/dev/null 2>&1 && printf %s -liconv)
+LDLIBS!=	echo "int main(){}" | $(CC) -liconv -x c - >/dev/null 2>&1 && printf %s -liconv
 
 BUILDCFLAGS=$(CFLAGS)
 
@@ -73,7 +65,7 @@ xgettext:
 	cp src/xgettext.sh ./xgettext
 
 autopoint: src/autopoint.in
-	cat $< | sed 's,@datadir@,$(datadir),' > $@
+	cat $> | sed 's,@datadir@,$(datadir),' > $@
 
 $(DESTDIR)$(libdir)/%.a: %.a
 	$(INSTALL) -D -m 755 $< $@
