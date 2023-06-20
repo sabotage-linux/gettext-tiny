@@ -42,7 +42,7 @@ INSTALL ?= ./install.sh
 
 -include config.mak
 
-LDLIBS:=$(shell echo "int main(){}" | $(CC) -liconv -x c - >/dev/null 2>&1 && printf %s -liconv)
+LDLIBS:=$(shell echo "int main(){}" | $(CC) $(CFLAGS) $(LDFLAGS) -liconv -x c - >/dev/null 2>&1 && printf %s -liconv)
 
 BUILDCFLAGS=$(CFLAGS)
 
