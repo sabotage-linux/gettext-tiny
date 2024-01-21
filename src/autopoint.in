@@ -15,13 +15,13 @@ dirprefix=""
 while read line
 do
   if [ "${line##*AC_CONFIG_AUX_DIR}" != "$line" ]; then
-    dirprefix="${line##*([}"
-    dirprefix="${dirprefix%%])*}"
+    dirprefix="${line##*'(['}"
+    dirprefix="${dirprefix%%'])'*}"
     mkdir -p "${dirprefix}"
   fi
   
   if [ "${line##*po/Makefile.in}" != "$line" ]; then
-    poprefix="${line##*[}"
+    poprefix="${line##*'['}"
     poprefix="${poprefix%%po/Makefile.in*}"
     install -D -m 644 @datadir@/data/autopoint_Makefile.in "./${poprefix}/po/Makefile.in.in"
   fi
