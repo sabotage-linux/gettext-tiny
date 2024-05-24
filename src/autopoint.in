@@ -1,6 +1,10 @@
 #!/bin/sh
 m4src=@datadir@/m4
 
+get_m4_serial() {
+	sed -n -e '/^#.* serial /s;^#.* serial \([^ ]*\).*;\1;p' "$@"
+}
+
 if ! test -e configure.ac ; then
 	echo "$0: error: configure.ac not found" >&2
 	exit 1
@@ -8,6 +12,14 @@ fi
 
 mkdir -p m4 intl po
 for i in $m4src/*.m4 ; do
+	dest="m4/$(basename "$i")"
+	if test -f "$dest"; then
+		serial_dest="$(get_m4_serial "$dest")"
+		serial_gettext="$(get_m4_serial "$i")"
+
+		test "$serial_dest" -ge "$serial_gettext" && continue
+	fi
+
 	cp -f $i m4/
 done
 
