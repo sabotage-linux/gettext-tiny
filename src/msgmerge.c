@@ -96,6 +96,9 @@ int process_line_callback(po_message_t msg, void* user) {
 				for (j = 1024; j < k; j += 1024)
 					fprintf(file->out, "\"%.1024s\"\n", &file->buf[j]);
 			}
+			if (!msg->strlen[0]) {
+				fprintf(file->out, "msgstr[0] \"\"\n");
+			}
 		} else {
 			escape(msg->str[0], file->buf, file->len);
 			fprintf(file->out, "msgstr \"%.1024s\"\n", file->buf);
