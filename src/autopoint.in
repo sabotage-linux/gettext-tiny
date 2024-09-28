@@ -1,4 +1,9 @@
 #!/bin/sh
+test "$1" = "--version" && {
+	echo "autopoint (GNU gettext-tools-compatible) 99.99"
+	exit 0
+}
+
 m4src=@datadir@/m4
 
 get_m4_serial() {
