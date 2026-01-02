@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#include <ctype.h>
 #include <limits.h>
 #include <assert.h>
 #include "poparser.h"
@@ -89,7 +88,14 @@ int process_line_callback(po_message_t msg, void* user) {
 	struct callbackdata *d = (struct callbackdata *) user;
 	struct strtbl *str, *trans;
 	size_t m;
-	int i, j, k = msg->sysdep;
+	int i, j[st_max+1] = {0};
+	int sysdep_cases = 1;
+	bool all_iterated;
+
+	// compute sysdep cases
+	for (i=0; i<st_max; i++)
+		if (msg->sysdep[i] != 0)
+			sysdep_cases *= msg->sysdep[i];
 
 	if (msg->flags & PO_FUZZY) return 0;
 	if (msg->strlen[0] == 0) return 0;
@@ -105,18 +111,18 @@ int process_line_callback(po_message_t msg, void* user) {
 		if (msg->ctxt_len)
 			m += msg->ctxt_len + 1;
 
-		d->len[0] += m * k;
+		d->len[0] += m * sysdep_cases;
 
 		m = 0;
 		for (i=0; msg->strlen[i]; i++) {
 			m += msg->strlen[i] + 1;
 		}
-		d->len[1] += m * k;
+		d->len[1] += m * sysdep_cases;
 
-		d->cnt += k;
+		d->cnt += sysdep_cases;
 		break;
 	case ps_parse:
-		for (j=0; j < k; j++) {
+		while (true) {
 			str = &d->list[d->cnt].str;
 			trans = &d->list[d->cnt].trans;
 
@@ -149,8 +155,20 @@ int process_line_callback(po_message_t msg, void* user) {
 			}
 
 			d->cnt++;
-		}
 
+			// carry over the iter otherwise
+			for (i=0; i<st_max+1; i++) {
+				// skip if it is not present
+				if (i < st_max && msg->sysdep[i] == 0) continue;
+				j[i]++;
+				if (i >= st_max || j[i] < msg->sysdep[i])
+					break;
+				j[i] = 0;
+			}
+
+			// break if all combs iterated
+			if (j[st_max] == 1) break;
+		}
 		break;
 	default:
 		abort();
