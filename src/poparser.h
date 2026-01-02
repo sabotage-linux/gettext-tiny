@@ -11,12 +11,22 @@ enum sysdep_types {
 	st_priu32 = 0,
 	st_priu64,
 	st_priumax,
+	st_prid32,
+	st_prid64,
+	st_pridmax,
+	st_prix32,
+	st_prix64,
+	st_prixmax,
 	st_max
 };
 
+extern const int sysdep_casenum[st_max];
+
 // make sure out has equal or more space than in
 // this add the NULL terminator, but do not count it in size
-size_t poparser_sysdep(const char *in, char *out, int num);
+// sysdep_repidx is an array of size st_max, which
+// indicates the replacement string for each sysdep type.
+size_t poparser_sysdep(const char *in, char *out, int *sysdep_repidx);
 
 struct po_header {
 	char charset[12];
@@ -32,14 +42,14 @@ struct po_message {
 	char *plural;
 	char* str[MAX_NPLURALS];
 
-	int sysdep;
+	int sysdep[st_max];
 	size_t ctxt_len;
 	size_t id_len;
 	size_t plural_len;
 	size_t strlen[MAX_NPLURALS];
-	// h.......1.0 
-	// |-------|a| 
-	// |.......|a| 
+	// h.......1.0
+	// |-------|a|
+	// |.......|a|
 	int flags;
 };
 typedef struct po_message *po_message_t;
@@ -49,7 +59,7 @@ typedef int (*poparser_callback)(po_message_t msg, void* user);
 enum po_stage {
 	// collect size of every msg
 	ps_size = 0,
-	// parse 
+	// parse
 	ps_parse,
 	ps_max = ps_parse,
 };
