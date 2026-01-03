@@ -92,7 +92,7 @@ int process_line_callback(po_message_t msg, void* user) {
 	int i, j[MAX_SYSDEP+1] = {0};
 
 	// compute sysdep cases
-	for (i=0; i<st_max; i++)
+	for (i=0; i<MAX_SYSDEP; i++)
 		if (msg->sysdep[i] != 0)
 			sysdep_cases *= msg->sysdep[i];
 
