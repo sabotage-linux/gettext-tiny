@@ -8,46 +8,13 @@
 
 #define strstarts(S, W) (memcmp(S, W, sizeof(W) - 1) ? NULL : (S + (sizeof(W) - 1)))
 
-#define PO_SYSDEP_PRIU32 (1 << st_priu32)
-#define PO_SYSDEP_PRIU64 (1 << st_priu64)
-// for complement, no usage
-#define PO_SYSDEP_PRIUMAX 0
-
-static const char* sysdep_str[st_max]={
-	[st_priu32] = "<PRIu32>",
-	[st_priu64] = "<PRIu64>",
-	[st_priumax] = "<PRIuMAX>",
-	[st_prid32] = "<PRId32>",
-	[st_prid64] = "<PRId64>",
-	[st_pridmax] = "<PRIdMAX>",
-	[st_prix32] = "<PRIx32>",
-	[st_prix64] = "<PRIx64>",
-	[st_prixmax] = "<PRIxMAX>",
-};
-
-static const char* sysdep_repl[st_max][2]={
-	[st_priu32]  = {"u", "lu"},
-	[st_priu64]  = {"lu", "llu"},
-	[st_priumax]  = {"ju"},
-	[st_prid32]  = {"d", "ld"},
-	[st_prid64]  = {"ld", "lld"},
-	[st_pridmax]  = {"jd"},
-	[st_prix32]  = {"x", "lx"},
-	[st_prix64]  = {"lx", "llx"},
-	[st_prixmax]  = {"jx"},
-};
-
-const int sysdep_casenum[st_max]={
-	[st_priu32] = 2,
-	[st_priu64] = 2,
-	[st_priumax] = 1,
-	[st_prid32] = 2,
-	[st_prid64] = 2,
-	[st_pridmax] = 1,
-	[st_prix32] = 2,
-	[st_prix64] = 2,
-	[st_prixmax] = 1,
-};
+static void poparser_populate_msg_sysdeps(const char *x, po_message_t msg) {
+	int i;
+	for (i = 0; i < MAX_SYSDEP && sysdep_cases[i].format; i++) {
+		if (msg->sysdep[i] == 0 && strstr(x, sysdep_cases[i].format))
+			msg->sysdep[i] = nularrlen(sysdep_cases[i].repl);
+	}
+}
 
 void poparser_init(struct po_parser *p, char* workbuf, size_t bufsize, poparser_callback cb, void* cbdata) {
 	int cnt;
@@ -174,10 +141,7 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 			x = p->buf;
 		}
 
-		for (cnt = 0; cnt < st_max; cnt++) {
-			if (strstr(x, sysdep_str[cnt]))
-				msg->sysdep[cnt] = sysdep_casenum[cnt];
-		}
+		poparser_populate_msg_sysdeps(x, msg);
 
 		switch (p->previous) {
 		case po_str:
@@ -249,10 +213,7 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 			if (msg->id_len || msg->plural_len)
 				return -po_invalid_entry;
 
-			for (cnt = 0; cnt < st_max; cnt++) {
-				if (strstr(x, sysdep_str[cnt]))
-					msg->sysdep[cnt] = sysdep_casenum[cnt];
-			}
+			poparser_populate_msg_sysdeps(x, msg);
 
 			if (p->stage == ps_parse) {
 				if (msg->ctxt == NULL) {
@@ -271,10 +232,7 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 			if (msg->plural_len)
 				return -po_invalid_entry;
 
-			for (cnt = 0; cnt < st_max; cnt++) {
-				if (strstr(x, sysdep_str[cnt]))
-					msg->sysdep[cnt] = sysdep_casenum[cnt];
-			}
+			poparser_populate_msg_sysdeps(x, msg);
 
 			if (p->stage == ps_parse) {
 				if (msg->id == NULL) {
@@ -289,6 +247,8 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 		} else if ((y = strstarts(z, "id_plural")) && isspace(*y)) {
 			if (!msg->id_len || p->strcnt)
 				return -po_invalid_entry;
+
+			poparser_populate_msg_sysdeps(x, msg);
 
 			if (p->stage == ps_parse) {
 				if (msg->plural == NULL) {
@@ -327,6 +287,8 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 			if ((t = poparser_feed_hdr(p, x)) != po_success) {
 				return t;
 			}
+
+			poparser_populate_msg_sysdeps(x, msg);
 
 			if (p->stage == ps_parse) {
 				if (msg->str[cnt] == NULL) {
@@ -409,12 +371,12 @@ size_t poparser_sysdep(const char *in, char *out, int *sysdep_repidx) {
 		out += y-x;
 		x = y;
 
-		for (n=0; n < st_max; n++) {
-			m = strlen(sysdep_str[n]);
-			if (!strncmp(y, sysdep_str[n], m)) {
+		for (n=0; n < MAX_SYSDEP && sysdep_cases[n].format; n++) {
+			m = strlen(sysdep_cases[n].format);
+			if (!strncmp(y, sysdep_cases[n].format, m)) {
 				x = y + m;
 
-				y = sysdep_repl[n][sysdep_repidx[n]];
+				y = sysdep_cases[n].repl[sysdep_repidx[n]];
 				m = strlen(y);
 				if (outs)
 					memcpy(out, y, m);

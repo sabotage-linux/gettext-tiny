@@ -88,12 +88,11 @@ int process_line_callback(po_message_t msg, void* user) {
 	struct callbackdata *d = (struct callbackdata *) user;
 	struct strtbl *str, *trans;
 	size_t m;
-	int i, j[st_max+1] = {0};
 	int sysdep_cases = 1;
-	bool all_iterated;
+	int i, j[MAX_SYSDEP+1] = {0};
 
 	// compute sysdep cases
-	for (i=0; i<st_max; i++)
+	for (i=0; i<MAX_SYSDEP; i++)
 		if (msg->sysdep[i] != 0)
 			sysdep_cases *= msg->sysdep[i];
 
@@ -157,17 +156,17 @@ int process_line_callback(po_message_t msg, void* user) {
 			d->cnt++;
 
 			// carry over the iter otherwise
-			for (i=0; i<st_max+1; i++) {
+			for (i=0; i<MAX_SYSDEP+1; i++) {
 				// skip if it is not present
-				if (i < st_max && msg->sysdep[i] == 0) continue;
+				if (i < MAX_SYSDEP && msg->sysdep[i] == 0) continue;
 				j[i]++;
-				if (i >= st_max || j[i] < msg->sysdep[i])
+				if (i >= MAX_SYSDEP || j[i] < msg->sysdep[i])
 					break;
 				j[i] = 0;
 			}
 
 			// break if all combs iterated
-			if (j[st_max] == 1) break;
+			if (j[MAX_SYSDEP] == 1) break;
 		}
 		break;
 	default:
