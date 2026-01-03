@@ -21,7 +21,7 @@ static inline int nularrlen(const char * const strs[]) {
 
 // make sure out has equal or more space than in
 // this add the NULL terminator, but do not count it in size
-// sysdep_repidx is an array of size st_max, which
+// sysdep_repidx is an array of size MAX_SYSDEP, which
 // indicates the replacement string for each sysdep type.
 size_t poparser_sysdep(const char *in, char *out, int *sysdep_repidx);
 

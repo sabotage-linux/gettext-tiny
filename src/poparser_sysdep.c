@@ -1,6 +1,6 @@
 #include "poparser.h"
 
-const sysdep_case_t sysdep_cases[] = {
+const sysdep_case_t sysdep_cases[MAX_SYSDEP] = {
 	{
 		.format = "<PRIu32>",
 		.repl = {"u", NULL},
@@ -48,6 +48,22 @@ const sysdep_case_t sysdep_cases[] = {
 	{
 		.format = "<PRIxPTR>",
 		.repl = {"x", "lx", NULL},
+	},
+	{
+		.format = "<PRIX32>",
+		.repl = {"X", NULL},
+	},
+	{
+		.format = "<PRIX64>",
+		.repl = {"lX", "llX", NULL},
+	},
+	{
+		.format = "<PRIXMAX>",
+		.repl = {"lX", "llX", NULL},
+	},
+	{
+		.format = "<PRIXPTR>",
+		.repl = {"X", "lX", NULL},
 	},
 	{
 		.format = "<PRIo32>",
