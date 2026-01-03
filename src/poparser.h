@@ -6,21 +6,18 @@
 #include <stdlib.h>
 
 #define MAX_NPLURALS 6
+#define MAX_SYSDEP 32
 
-enum sysdep_types {
-	st_priu32 = 0,
-	st_priu64,
-	st_priumax,
-	st_prid32,
-	st_prid64,
-	st_pridmax,
-	st_prix32,
-	st_prix64,
-	st_prixmax,
-	st_max
-};
-
-extern const int sysdep_casenum[st_max];
+typedef struct sysdep_case {
+	const char *format;
+	const char *repl[4];
+} sysdep_case_t;
+extern const sysdep_case_t sysdep_cases[MAX_SYSDEP];
+static inline int nularrlen(const char * const strs[]) {
+	int j;
+	for (j=0; strs && strs[j]; j++);
+	return j;
+}
 
 // make sure out has equal or more space than in
 // this add the NULL terminator, but do not count it in size
@@ -42,7 +39,7 @@ struct po_message {
 	char *plural;
 	char* str[MAX_NPLURALS];
 
-	int sysdep[st_max];
+	int sysdep[MAX_SYSDEP];
 	size_t ctxt_len;
 	size_t id_len;
 	size_t plural_len;
