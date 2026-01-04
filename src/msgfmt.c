@@ -180,7 +180,8 @@ int process(FILE *in, FILE *out, bool strict) {
 	char line[8192]; char *lp;
 	size_t off, i;
 	enum po_error t;
-	char convbuf[32768];
+	size_t convbuf_sz = 32768;
+	char *convbuf = malloc(convbuf_sz);
 
 	struct callbackdata d = {
 		.len = {0, 0},
@@ -192,7 +193,7 @@ int process(FILE *in, FILE *out, bool strict) {
 
 	mohdr.off_tbl_trans = mohdr.off_tbl_org;
 
-	poparser_init(p, convbuf, sizeof(convbuf), process_line_callback, &d);
+	poparser_init(p, convbuf, convbuf_sz, process_line_callback, &d);
 	p->strict = strict;
 	d.stage = p->stage;
 
@@ -257,6 +258,8 @@ int process(FILE *in, FILE *out, bool strict) {
 	free(d.list);
 	free(d.buf[0]);
 	free(d.buf[1]);
+
+	free(convbuf);
 
 	return 0;
 }
