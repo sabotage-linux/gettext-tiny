@@ -103,7 +103,7 @@ enum po_error poparser_feed_line(struct po_parser *p, char* in, size_t in_len) {
 		case ',':
 			x = &line[2];
 			while (*x && (y = strpbrk(x, " ,\n"))) {
-				if (y != x && !memcmp(x, "fuzzy", y-x)) {
+				if (y != x && !strncmp(x, "fuzzy", 5)) {
 					msg->flags |= PO_FUZZY;
 				}
 				x = y + strspn(y, " ,\n");
