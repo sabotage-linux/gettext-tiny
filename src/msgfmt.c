@@ -88,7 +88,7 @@ int process_line_callback(po_message_t msg, void* user) {
 	struct callbackdata *d = (struct callbackdata *) user;
 	struct strtbl *str, *trans;
 	size_t m;
-	int sysdep_cases;
+	int sysdep_cases = 1;
 	int i, j[MAX_SYSDEP+1] = {0};
 
 	// compute sysdep cases
@@ -207,8 +207,14 @@ int process(FILE *in, FILE *out, bool strict) {
 	if (strict && d.cnt == 0) return -(po_error_last+1);
 
 	d.list = (struct strmap*)malloc(sizeof(struct strmap)*d.cnt);
+	if (!d.list)
+		return -po_fail_mem;
 	d.buf[0] = (char*)malloc(d.len[0]);
+	if (!d.buf[0])
+		return -po_fail_mem;
 	d.buf[1] = (char*)malloc(d.len[1]);
+	if (!d.buf[1])
+		return -po_fail_mem;
 	d.len[0] = 0;
 	d.len[1] = 0;
 	d.cnt = 0;
