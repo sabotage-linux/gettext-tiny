@@ -100,8 +100,8 @@ enum po_error {
 	po_excepted_token,
 	po_plurals_overflow,
 	po_invalid_entry,
-	po_internal,
 	po_fail_mem,
+	po_internal,
 	po_error_last = po_internal,
 };
 
