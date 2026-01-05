@@ -8,8 +8,8 @@
 #define MAX_NPLURALS 6
 
 typedef struct sysdep_case {
-	const char format[10];
-	const char repl[2][4];
+	const char format[10]; /* 10 = strlen()+1 of the longest <PRI*> string in sysdep.h */
+	const char repl[2][4]; /* currently max 2 replacements of max strlen 3 +1 byte for nul */
 	const char cnt;
 } sysdep_case_t;
 
