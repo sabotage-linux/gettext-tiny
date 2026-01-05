@@ -206,8 +206,14 @@ int process(FILE *in, FILE *out, bool strict) {
 	if (strict && d.cnt == 0) return -(po_error_last+1);
 
 	d.list = (struct strmap*)malloc(sizeof(struct strmap)*d.cnt);
+	if (!d.list)
+		return -po_fail_mem;
 	d.buf[0] = (char*)malloc(d.len[0]);
+	if (!d.buf[0])
+		return -po_fail_mem;
 	d.buf[1] = (char*)malloc(d.len[1]);
+	if (!d.buf[1])
+		return -po_fail_mem;
 	d.len[0] = 0;
 	d.len[1] = 0;
 	d.cnt = 0;
