@@ -10,9 +10,9 @@
 
 static void poparser_populate_msg_sysdeps(const char *x, po_message_t msg) {
 	int i;
-	for (i = 0; i < MAX_SYSDEP && sysdep_cases[i].format; i++) {
+	for (i = 0; i < MAX_SYSDEP; i++) {
 		if (msg->sysdep[i] == 0 && strstr(x, sysdep_cases[i].format))
-			msg->sysdep[i] = nularrlen(sysdep_cases[i].repl);
+			msg->sysdep[i] = sysdep_cases[i].cnt;
 	}
 }
 
@@ -371,7 +371,7 @@ size_t poparser_sysdep(const char *in, char *out, int *sysdep_repidx) {
 		out += y-x;
 		x = y;
 
-		for (n=0; n < MAX_SYSDEP && sysdep_cases[n].format; n++) {
+		for (n=0; n < MAX_SYSDEP; n++) {
 			m = strlen(sysdep_cases[n].format);
 			if (!strncmp(y, sysdep_cases[n].format, m)) {
 				x = y + m;

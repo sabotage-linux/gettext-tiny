@@ -6,18 +6,22 @@
 #include <stdlib.h>
 
 #define MAX_NPLURALS 6
-#define MAX_SYSDEP 32
 
 typedef struct sysdep_case {
-	const char *format;
-	const char *repl[4];
+	const char format[10]; /* 10 = strlen()+1 of the longest <PRI*> string in sysdep.h */
+	const char repl[2][4]; /* currently max 2 replacements of max strlen 3 +1 byte for nul */
+	const char cnt;
 } sysdep_case_t;
-extern const sysdep_case_t sysdep_cases[MAX_SYSDEP];
-static inline int nularrlen(const char * const strs[]) {
-	int j;
-	for (j=0; strs && strs[j]; j++);
-	return j;
-}
+
+extern const sysdep_case_t sysdep_cases[];
+
+/* fake array to get a compile time constant for MAX_SYSDEP */
+#define ENTRY(...) 0
+static char sysdep_counter[] = {
+#include "sysdep.h"
+};
+#undef ENTRY
+#define MAX_SYSDEP sizeof(sysdep_counter)
 
 // make sure out has equal or more space than in
 // this add the NULL terminator, but do not count it in size
