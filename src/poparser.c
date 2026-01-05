@@ -12,7 +12,7 @@ static void poparser_populate_msg_sysdeps(const char *x, po_message_t msg) {
 	int i;
 	for (i = 0; i < MAX_SYSDEP && sysdep_cases[i].format; i++) {
 		if (msg->sysdep[i] == 0 && strstr(x, sysdep_cases[i].format))
-			msg->sysdep[i] = nularrlen(sysdep_cases[i].repl);
+			msg->sysdep[i] = sysdep_cases[i].cnt;
 	}
 }
 
