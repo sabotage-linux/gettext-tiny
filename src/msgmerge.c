@@ -155,7 +155,7 @@ void set_file(int out, char* fn, FILE** dest) {
 		*dest = fopen(fn, out ? "w" : "r");
 	}
 	if(!*dest) {
-		perror("fopen");
+		perror(fn);
 		exit(1);
 	}
 }
