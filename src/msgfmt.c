@@ -296,7 +296,7 @@ void set_file(int out, char* fn, FILE** dest) {
 	}
 
 	if(!*dest) {
-		perror("fopen");
+		perror(fn);
 		exit(1);
 	}
 }
@@ -428,7 +428,7 @@ int main(int argc, char**argv) {
 		out = fopen(path, "w");
 
 		if (out == NULL) {
-			perror("fopen");
+			perror(path);
 			ret = -1;
 		}
 		break;
